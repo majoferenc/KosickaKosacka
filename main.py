@@ -38,3 +38,4 @@ while not done:
     result=step(sessionid, move)
     done=result["done"]
     print(move, result)
+    
