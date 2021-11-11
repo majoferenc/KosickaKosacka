@@ -6,8 +6,16 @@ import numpy as np
 import os
 import shutil
 
-BASE_URL = "http://169.51.194.78:31798/"
+# BASE_URL = "http://169.51.194.78:31798/" 
+BASE_URL = "http://localhost/"
 
+done = False
+result = {"sensors": None}
+move = None
+VALID_MOVES = ['Forward', 'Backward',  'TurnLeft', 'TurnRight']
+
+# Controls rendering of training, set to False for faster training
+RENDER_MODE = True
 # Controls if we want load existing NN and start prediction/inference with it
 PREDICT_MODE = False
 
@@ -33,16 +41,11 @@ STATE_DIM = 1
 # in our case action dimension is 1
 ACTION_DIM = 1
 # defines all posibilities of action
-ACTION_BOUND = [0, 1, 2, 3]
-
-done = False
-result = {"sensors": None}
-move = None
-VALID_MOVES = ['Forward', 'Backward',  'TurnLeft', 'TurnRight']
-
+ACTION_BOUND = [-1,1]
 
 # Disable Tensorflow eager execution
 tf.compat.v1.disable_eager_execution()
+
 
 # Memory storing all action moves of Actors NN
 class Memory(object):
@@ -108,7 +111,7 @@ class Actor(object):
                                         trainable=trainable)(net)
             with tf.compat.v1.variable_scope('a'):
                 # last NN layer, will return final move set of actions, which will Actor take
-                actions = tf.keras.layers.Dense(self.a_dim, activation=tf.nn.tanh, kernel_initializer=init_w,
+                actions = tf.keras.layers.Dense(self.a_dim, activation='softmax', kernel_initializer=init_w,
                                                 name='a', trainable=trainable)(net)
                 scaled_a = tf.multiply(actions, self.action_bound,
                                        name='scaled_a')  # Scale output to -action_bound to action_bound
@@ -135,6 +138,76 @@ class Actor(object):
             opt = tf.keras.optimizers.RMSprop(-self.lr)  # (- learning rate) for ascent policy
             self.train_op = opt.apply_gradients(zip(self.policy_grads, self.e_params))
 
+
+# Second NN, inform Actor how good was the action taken and how it should adjust
+class Critic(object):
+    def __init__(self, sess, state_dim, action_dim, learning_rate, gamma, t_replace_iter, a, a_):
+        # tensorflow session
+        self.sess = sess
+        # state dimension
+        self.s_dim = state_dim
+        # action dimension
+        self.a_dim = action_dim
+        self.lr = learning_rate
+        self.gamma = gamma
+        self.t_replace_iter = t_replace_iter
+        self.t_replace_counter = 0
+
+        with tf.compat.v1.variable_scope('Critic'):
+            # Input (s, a), output q
+            self.a = a
+            self.q = self.build_dqn(STATE, self.a, 'eval_net', trainable=True)
+
+            # Input (s_, a_), output q_ for q_target
+            self.q_ = self.build_dqn(STATE_, a_, 'target_net',
+                                     trainable=False)  # target_q is based on a_ from Actor's target_net
+
+            self.e_params = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.GLOBAL_VARIABLES,
+                                                        scope='Critic/eval_net')
+            self.t_params = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.GLOBAL_VARIABLES,
+                                                        scope='Critic/target_net')
+
+        with tf.compat.v1.variable_scope('target_q'):
+            self.target_q = REWARD + self.gamma * self.q_
+
+        with tf.compat.v1.variable_scope('TD_error'):
+            self.loss = tf.reduce_mean(input_tensor=tf.math.squared_difference(self.target_q, self.q))
+
+        with tf.compat.v1.variable_scope('C_train'):
+            self.train_op = tf.compat.v1.train.RMSPropOptimizer(self.lr).minimize(self.loss)
+
+        with tf.compat.v1.variable_scope('a_grad'):
+            self.a_grads = tf.gradients(ys=self.q, xs=a)[0]  # tensor of gradients of each sample (None, a_dim)
+
+    def build_dqn(self, s, a, scope, trainable):
+        with tf.compat.v1.variable_scope(scope):
+            # creating initial weights
+            init_w = tf.keras.initializers.VarianceScaling(scale=1.0, mode="fan_avg", distribution="uniform", seed=None)
+            # creating initial biases
+            init_b = tf.constant_initializer(0.01)
+
+            with tf.compat.v1.variable_scope('l1'):
+                n_l1 = 100
+                w1_s = tf.compat.v1.get_variable('w1_s', [self.s_dim, n_l1], initializer=init_w, trainable=trainable)
+                w1_a = tf.compat.v1.get_variable('w1_a', [self.a_dim, n_l1], initializer=init_w, trainable=trainable)
+                b1 = tf.compat.v1.get_variable('b1', [1, n_l1], initializer=init_b, trainable=trainable)
+                net = tf.nn.relu6(tf.matmul(s, w1_s) + tf.matmul(a, w1_a) + b1)
+            # first NN layer, regular densely-connected NN layer, 20 neurons, using RELU
+            net = tf.keras.layers.Dense(20, activation=tf.nn.relu,
+                                        kernel_initializer=init_w, bias_initializer=init_b, name='l2',
+                                        trainable=trainable)(net)
+            with tf.compat.v1.variable_scope('q'):
+                q = tf.keras.layers.Dense(1, kernel_initializer=init_w, bias_initializer=init_b,
+                                          trainable=trainable)(net)  # Q(s,a)
+        return q
+
+    def learn(self, state, action, reward, state_):
+        self.sess.run(self.train_op, feed_dict={STATE: state, self.a: action, REWARD: reward, STATE_: state_})
+        if self.t_replace_counter % self.t_replace_iter == 0:
+            self.sess.run([tf.compat.v1.assign(t, e) for t, e in zip(self.t_params, self.e_params)])
+        self.t_replace_counter += 1
+
+
 # all tensorflow placeholder variables
 with tf.compat.v1.name_scope('STATE'):
     STATE = tf.compat.v1.placeholder(tf.float32, shape=[None, STATE_DIM], name='state')
@@ -143,13 +216,14 @@ with tf.compat.v1.name_scope('REWARD'):
 with tf.compat.v1.name_scope('STATE_'):
     STATE_ = tf.compat.v1.placeholder(tf.float32, shape=[None, STATE_DIM], name='state_')
 
-
 # Create TensorFlow Session
 sess = tf.compat.v1.Session()
 
 # Create actor and critic
 actor = Actor(sess, ACTION_DIM, ACTION_BOUND[1], LR_A, REPLACE_ITER_A)
-
+critic = Critic(sess, STATE_DIM, ACTION_DIM, LR_C, GAMMA, REPLACE_ITER_C, actor.a, actor.a_)
+# Setting Critic as Actors gradient layer
+actor.add_grad_to_graph(critic.a_grads)
 
 # Create memory
 memory_replay_buffer = Memory(MEMORY_CAPACITY, input_dims=2 * STATE_DIM + ACTION_DIM + 1)
@@ -162,22 +236,62 @@ if PREDICT_MODE:
 else:
     sess.run(tf.compat.v1.global_variables_initializer())
 
+def step(sessionid, move):
+    reponse = requests.get(BASE_URL+"step/", params={"id": sessionid, "move": move})
+    return reponse.json()
 
-def train():
-    random_exploration = 2.  # control exploration
-    for ep in range(MAX_EPISODES):
-        state = env.reset()
-        ep_step = 0
 
-        for t in range(MAX_EP_STEPS):
-            # Added exploration noise
-            actor_state = actor.choose_action(state)
-            actor_state = np.clip(np.random.normal(actor_state, random_exploration), *ACTION_BOUND)  # add randomness
+def initsession():
+    response = requests.get(BASE_URL+"init/")
+    print(response.json())
+    return response.json()
+    
+
+random_exploration = 2.  # control exploration
+for ep in range(MAX_EPISODES):
+    ep_step = 0
+
+    for t in range(MAX_EP_STEPS):
+        # TODO use state from env
+        state = np.array([1.0])
+        print(state)
+        # Added exploration noise
+        actor_state = actor.choose_action(state)
+        actor_state = np.clip(np.random.normal(actor_state, random_exploration), *ACTION_BOUND)  # add randomness
+
+
+        sessionid = initsession()['id']
+
+
+        #input("Visualization: " +BASE_URL+"visualize/sessionid+"\nPress Enter to continue...")
+        while not done:
+            # little logic to not cross border or bump to obstacle
+            validmoves_local=VALID_MOVES
+            if result["sensors"] in ["Obstacle", "Border"]:
+                if move == "Forward":
+                    validmoves_local=["Backward"]
+                elif move == "Backward":
+                    validmoves_local=["Forward"]
+
+            # move=random.choice(validmoves_local)
+            
+            
             # to action selection for exploration
+            print("-------------")
+            print(int(actor_state))
 
             # send action of actor to grass cutter env
             # get state or sensor info, reward value and done varibe
-            state_, reward, done = env.move(actor_state)
+            # state_, reward, done = env.move(actor_state)
+            move = 'Forward'
+            result=step(sessionid, move)
+            print(result)
+            done=result["done"]
+            reward = result["reward"]
+            print(move, result)
+
+            # TODO get new state from env
+            state_ = np.array([1.0])
             # add move to memory
             memory_replay_buffer.store_transition(state, actor_state, reward, state_)
 
@@ -190,6 +304,8 @@ def train():
                 b_r = b_M[:, -STATE_DIM - 1: -STATE_DIM]
                 b_s_ = b_M[:, -STATE_DIM:]
 
+                # trigger Critic learn function
+                critic.learn(b_s, b_a, b_r, b_s_)
                 # trigger Actor learn function
                 actor.learn(b_s)
 
@@ -197,45 +313,16 @@ def train():
             # increment step by one
             ep_step += 1
 
-            if done or t == MAX_EP_STEPS - 1:
-                print('Iteration:', ep,
-                      '| Steps taken: %i' % int(ep_step),
-                      '| Random Exploration: %.2f' % random_exploration
-                      )
-                break
+        if done or t == MAX_EP_STEPS - 1:
+            print('Iteration:', ep,
+                    '| Steps taken: %i' % int(ep_step),
+                    '| Random Exploration: %.2f' % random_exploration
+                    )
+            break
 
-    # Save model for future prediction
-    if os.path.isdir(path): shutil.rmtree(path)
-    os.mkdir(path)
-    ckpt_path = os.path.join(path, 'model.ckpt')
-    save_path = saver.save(sess, ckpt_path, write_meta_graph=True)
-    print("\n====> Saving trained model into: %s\n" % save_path)
-
-def step(sessionid, move):
-    reponse = requests.get(BASE_URL+"step/", params={"id": sessionid, "move": move})
-    return reponse.json()
-
-
-def initsession():
-    response = requests.get(BASE_URL+"init/")
-    print(response.json())
-    return response.json()
-
-sessionid = initsession()['id']
-
-input("Visualization: " +BASE_URL+"visualize/" +
-      sessionid+"\nPress Enter to continue...")
-while not done:
-    # little logic to not cross border or bump to obstacle
-    validmoves_local=VALID_MOVES
-    if result["sensors"] in ["Obstacle", "Border"]:
-        if move == "Forward":
-            validmoves_local=["Backward"]
-        elif move == "Backward":
-            validmoves_local=["Forward"]
-
-    move=random.choice(validmoves_local)
-      # add move to memory
-    result=step(sessionid, move)
-    done=result["done"]
-    print(move, result)
+# Save model for future prediction
+if os.path.isdir(path): shutil.rmtree(path)
+os.mkdir(path)
+ckpt_path = os.path.join(path, 'model.ckpt')
+save_path = saver.save(sess, ckpt_path, write_meta_graph=True)
+print("\n====> Saving trained model into: %s\n" % save_path)
