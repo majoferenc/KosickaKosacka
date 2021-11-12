@@ -37,7 +37,7 @@ if args.predict_mode:
     PREDICT_MODE = True
 
 # maximum number of episodes
-MAX_EPISODES = 100_000
+MAX_EPISODES = 10_000
 LR_A = 1e-4  # learning rate for Actor, or simply 0.0001
 LR_C = 1e-4  # learning rate for Critic, or simply 0.0001
 # value of reward
@@ -47,8 +47,8 @@ REPLACE_ITER_A = 800
 # Critic iteration
 REPLACE_ITER_C = 700
 # capacity of memory buffer
-MEMORY_CAPACITY = 20000
-BATCH_SIZE = 16
+MEMORY_CAPACITY = 10_000
+BATCH_SIZE = 160
 VAR_MIN = 0.1
 
 # state dimension is equal to sensors number
@@ -331,11 +331,23 @@ def train():
                 # state_, reward, done = env.move(actor_state)
                 move = get_valid_move(actor_state)
                 print("Move" + move)
+                # Create front sensor data:
+                result=step(session['id'], 'Forward')
+                step(session['id'], 'Backward')
+                
                 result=step(session['id'], move)
-                done=result["done"]
+                if result['done']:
+                    done=result['done']
+                else:
+                    done = False
                 reward = result["reward"]
                 print(move, result)
-
+                # change reward mechanism
+                if result["reward"] == 0:
+                    reward = -1
+                else:
+                    reward = 0
+                    
                 state_ = get_input_to_dqn_fron_sensors(result["sensors"])
                 if result["sensors"] in ["OutOfBondaries", "Stuck"]:
                     print("Session ended: " + result["sensors"])
@@ -398,9 +410,20 @@ def predict():
             actor_state = actor.choose_action(state)
             move = get_valid_move(actor_state)
             print("Move" + move)
-            result=step(session['id'], move)
+
+            # Create front sensor data:
+            result=step(session['id'], 'Forward')
+            step(session['id'], 'Backward')
+
+            # Do real move
+            step(session['id'], move)
             done=result["done"]
-            reward = result["reward"]
+            # change reward mechanism
+            if result["reward"] == 0:
+                reward = -1
+            else:
+                reward = 0
+            print("Our Reward:" + reward)
             print(move, result)
             state_ = get_input_to_dqn_fron_sensors(result["sensors"])
             if result["sensors"] in ["OutOfBondaries", "Stuck"]:
