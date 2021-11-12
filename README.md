@@ -20,7 +20,7 @@ Open Anaconda Powershell Prompt:
 
 ## Run algo version
     
-    python main.py
+    python main.py --maps Greenland Localhost 'Mapname with spaces'
 
 
 ## Run NN verision
