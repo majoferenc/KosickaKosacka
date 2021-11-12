@@ -12,6 +12,6 @@ def step(session_id, move):
 
 def init_session(map_name):
     print("Calling init enpoint with paramets mapName: {} and teamName: {}".format(map_name, TEAM_NAME))
-    response = requests.get(BASE_URL+"init/", params={"mapName": map_name, "teamName": TEAM_NAME})
+    response = requests.get(BASE_URL+"init/", params={"map": map_name, "team": TEAM_NAME})
     print(response.json())
     return response.json()
