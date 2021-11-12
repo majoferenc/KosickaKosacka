@@ -8,10 +8,8 @@ result = {"sensors": None}
 move = None
 VALID_MOVES = ['Forward', 'Backward', 'TurnLeft', 'TurnRight']
 
-
-
-
 path = []
+
 
 def reverse_step():
     move = path.pop()
@@ -28,9 +26,13 @@ def reverse_step():
 
     return reponse.json()
 
+
+
 def step(sessionid, move):
     path.append(move)
     reponse = requests.get(BASE_URL + "step/", params={"id": sessionid, "move": move})
+    print(reponse)
+
     return reponse.json()
 
 
@@ -41,8 +43,7 @@ def initsession():
 
 
 def findValidMove():
-    newWay = ""
-    for i in range(1,8):
+    for i in range(1, 8):
         move = "TurnRight"
         result = step(sessionid, move)
         move = "Forward"
@@ -55,8 +56,13 @@ def findValidMove():
             return False
 
 
-
 def dfs():
+    global done
+    global result
+    global move
+    global VALID_MOVES
+    global path
+
     while not done:
         # little logic to not cross border or bump to obstacle
         if result["sensors"] in ["Obstacle", "Border", "Cut"]:
@@ -65,11 +71,10 @@ def dfs():
             validMove = findValidMove()
             while not validMove:
                 if not path:
-                    makeSomeDecision() # TODO: what to do if i am in closed teritory
+                    pass
+                    # makeSomeDecision() # TODO: what to do if i am in closed teritory
                 result = reverse_step()
                 validMove = findValidMove()
-
-
 
         move = "Forward"
         result = step(sessionid, move)
@@ -77,10 +82,9 @@ def dfs():
         print(move, result)
 
 
-sessionid = '3161641376361'  # initsession()['id']
+sessionid = '7985651476361'  # initsession()['id']
 
 input("Visualization: " + BASE_URL + "visualize/" +
       sessionid + "\nPress Enter to continue...")
-
 
 dfs()
