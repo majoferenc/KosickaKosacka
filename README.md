@@ -40,3 +40,7 @@ Open Anaconda Powershell Prompt:
 
     python main_dqn.py --predict_mode True --render_mode True
 
+
+###
+    conda activate C:\Users\majof\anaconda3\envs\tf_test_env2
+    cd ../../IBM/Hack@Home2021/KosickaKosacka

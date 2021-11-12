@@ -37,7 +37,7 @@ if args.predict_mode:
     PREDICT_MODE = True
 
 # maximum number of episodes
-MAX_EPISODES = 10_000
+MAX_EPISODES = 10
 LR_A = 1e-4  # learning rate for Actor, or simply 0.0001
 LR_C = 1e-4  # learning rate for Critic, or simply 0.0001
 # value of reward
@@ -47,8 +47,8 @@ REPLACE_ITER_A = 800
 # Critic iteration
 REPLACE_ITER_C = 700
 # capacity of memory buffer
-MEMORY_CAPACITY = 10_000
-BATCH_SIZE = 160
+MEMORY_CAPACITY = 1000
+BATCH_SIZE = 16
 VAR_MIN = 0.1
 
 # state dimension is equal to sensors number
@@ -275,18 +275,24 @@ else:
 
 def step(sessionid, move):
     try:
-        reponse = requests.get(BASE_URL+"step/", params={"id": sessionid, "move": move})
-        time.sleep(0.01)
-        return reponse.json()
+        response = requests.get(BASE_URL+"step/", params={"id": sessionid, "move": move})
+        if response:
+            return response.json()
+        else:
+            return step(sessionid, move)
     except:
+        exit(1)
         print("Failed getting new step. Trying again...")
         return step(sessionid, move)
 
 def initsession():
     try:
         response = requests.get(BASE_URL+"init/")
-        print(response.json())
-        return response.json()
+        if response:
+            print(response.json())
+            return response.json()
+        else:
+            return initsession()
     except:
         print("Failed creating new session. Trying again...")
         return initsession()
@@ -328,7 +334,6 @@ def train():
                 actor_state = np.clip(np.random.normal(actor_state, random_exploration), *ACTION_BOUND)  # add randomness
                 # send action of actor to grass cutter env
                 # get state or sensor info, reward value and done varibe
-                # state_, reward, done = env.move(actor_state)
                 move = get_valid_move(actor_state)
                 print("Move" + move)
                 # Create front sensor data:
@@ -369,6 +374,7 @@ def train():
                 # increment step by one
                 ep_step += 1
                 print(move, result)
+
                 if result["sensors"] in ["OutOfBondaries", "Stuck"]:
                     print("====> Session ended: " + result["sensors"])
                     if RENDER_MODE:
@@ -428,7 +434,6 @@ def predict():
                 reward = -1
             else:
                 reward = 0
-            print("Our Reward:" + reward)
             print(move, real_result)
             state_ = get_input_to_dqn_fron_sensors(result["sensors"])
             if real_result["sensors"] in ["OutOfBondaries", "Stuck"]:
