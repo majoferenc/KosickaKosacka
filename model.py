@@ -7,8 +7,8 @@ class Model:
     def __init__(self, init_json):
         # init response data
         self.session_id = init_json["id"]
-        self.power_max = init_json["power_max"]
-        self.steps_limit = init_json["steps_limit"]
+        self.power_max = init_json["maxEnergy"]
+        self.steps_limit = init_json["stepsLimit"]
         
         # step response data
         self.done = false
@@ -34,7 +34,7 @@ class Model:
             # check if execute queue is empty
             if self.execute_queue.qsize() == 0:
                 # get moves from algorithm
-                moves_to_execute = []
+                moves_to_execute = [SupportedMove.FORWARD]
             
                 for move in moves_to_execute:
                     self.execute_queue.put(move)
