@@ -1,6 +1,7 @@
 import time
 import random
 import requests
+import webbrowser
 
 import tensorflow as tf
 import numpy as np
@@ -23,7 +24,7 @@ PREDICT_MODE = False
 # maximum steps of episode/iteration
 MAX_EP_STEPS = 500 # is overwriten by environment
 # maximum number of episodes
-MAX_EPISODES = 10
+MAX_EPISODES = 1000
 LR_A = 1e-4  # learning rate for Actor, or simply 0.0001
 LR_C = 1e-4  # learning rate for Critic, or simply 0.0001
 # value of reward
@@ -273,7 +274,9 @@ for ep in range(MAX_EPISODES):
     for t in range(MAX_EP_STEPS):
         session = initsession()
         MAX_EP_STEPS = session['stepsLimit']
-        #input("Visualization: " +BASE_URL+"visualize/sessionid+")
+        print(session["id"])
+        if RENDER_MODE:
+            webbrowser.open_new_tab(BASE_URL+"visualize/" + session["id"])
         while not done:
             print("Episode: " + str(ep))
             # little logic to not cross border or bump to obstacle
