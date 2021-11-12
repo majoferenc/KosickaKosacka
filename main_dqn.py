@@ -1,8 +1,8 @@
 import time
 import random
 import requests
-import webbrowser
-
+import webbrowser, pyautogui
+import argparse
 import tensorflow as tf
 import numpy as np
 import os
@@ -16,25 +16,38 @@ result = {"sensors": None}
 move = None
 VALID_MOVES = ['Forward', 'Backward',  'TurnLeft', 'TurnRight']
 
+# Initiate the parser
+parser = argparse.ArgumentParser()
+parser.add_argument("-rm", "--render_mode", help="enable render mode")
+parser.add_argument("-pm", "--predict_mode", help="enable predict mode")
+# Read arguments from the command line
+args = parser.parse_args()
+
 # Controls rendering of training, set to False for faster training
-RENDER_MODE = True
+RENDER_MODE = False
+
 # Controls if we want load existing NN and start prediction/inference with it
 PREDICT_MODE = False
 
-# maximum steps of episode/iteration
-MAX_EP_STEPS = 500 # is overwriten by environment
+# Check for --version or -V
+if args.render_mode:
+    RENDER_MODE = True
+
+if args.predict_mode:
+    PREDICT_MODE = True
+
 # maximum number of episodes
-MAX_EPISODES = 1000
+MAX_EPISODES = 500
 LR_A = 1e-4  # learning rate for Actor, or simply 0.0001
 LR_C = 1e-4  # learning rate for Critic, or simply 0.0001
 # value of reward
-GAMMA = 0.9
+GAMMA = 1.0
 # Actor iteration
 REPLACE_ITER_A = 800
 # Critic iteration
 REPLACE_ITER_C = 700
 # capacity of memory buffer
-MEMORY_CAPACITY = 2000
+MEMORY_CAPACITY = 20000
 BATCH_SIZE = 16
 VAR_MIN = 0.1
 
@@ -122,12 +135,16 @@ class Actor(object):
             init_b = tf.constant_initializer(0.001)
             # first NN layer, regular densely-connected NN layer, 100 neurons, using RELU(Rectified Linear Unit)
             # activation function, which defines, when neuron will activate
-            net = tf.keras.layers.Dense(100, activation=tf.nn.relu,
+            net = tf.keras.layers.Dense(256, activation=tf.nn.relu,
                                         kernel_initializer=init_w, bias_initializer=init_b, name='l1',
                                         trainable=trainable)(s)
             # second NN layer, regular densely-connected NN layer, 20 neurons, using RELU
-            net = tf.keras.layers.Dense(20, activation=tf.nn.relu,
+            net = tf.keras.layers.Dense(256, activation=tf.nn.relu,
                                         kernel_initializer=init_w, bias_initializer=init_b, name='l2',
+                                        trainable=trainable)(net)
+            # second NN layer, regular densely-connected NN layer, 20 neurons, using RELU
+            net = tf.keras.layers.Dense(20, activation=tf.nn.relu,
+                                        kernel_initializer=init_w, bias_initializer=init_b, name='l3',
                                         trainable=trainable)(net)
             with tf.compat.v1.variable_scope('a'):
                 # last NN layer, will return final move set of actions, which will Actor take
@@ -214,7 +231,7 @@ class Critic(object):
                 net = tf.nn.relu6(tf.matmul(s, w1_s) + tf.matmul(a, w1_a) + b1)
             # first NN layer, regular densely-connected NN layer, 20 neurons, using RELU
             net = tf.keras.layers.Dense(20, activation=tf.nn.relu,
-                                        kernel_initializer=init_w, bias_initializer=init_b, name='l2',
+                                        kernel_initializer=init_w, bias_initializer=init_b, name='l3',
                                         trainable=trainable)(net)
             with tf.compat.v1.variable_scope('q'):
                 q = tf.keras.layers.Dense(1, kernel_initializer=init_w, bias_initializer=init_b,
@@ -267,78 +284,129 @@ def initsession():
     return response.json()
     
 
-random_exploration = 2.  # control exploration
-for ep in range(MAX_EPISODES):
-    ep_step = 0
+def train():
+    # maximum steps of episode/iteration
+    MAX_EP_STEPS = 500 # is overwriten by environment
     done = False
-    for t in range(MAX_EP_STEPS):
+    result = {"sensors": None}
+    move = None
+    VALID_MOVES = ['Forward', 'Backward',  'TurnLeft', 'TurnRight']
+    random_exploration = 2.  # control exploration
+    for ep in range(MAX_EPISODES):
+        ep_step = 0
+        done = False
+        for t in range(MAX_EP_STEPS):
+            session = initsession()
+            MAX_EP_STEPS = session['stepsLimit']
+            print(session["id"])
+            if RENDER_MODE:
+                webbrowser.open(BASE_URL+"visualize/" + session["id"])
+            while not done:
+                print("Episode: " + str(ep))
+                # little logic to not cross border or bump to obstacle
+                validmoves_local=VALID_MOVES
+                if result["sensors"] in ["Obstacle", "Border"]:
+                    if move == "Forward":
+                        validmoves_local=["Backward"]
+                    elif move == "Backward":
+                        validmoves_local=["Forward"]
+                if result["sensors"]:
+                    print("Sensors:" + result["sensors"])
+                    state = get_input_to_dqn_fron_sensors(result["sensors"])
+                else:
+                    state = np.array([3.0])
+                # Added exploration noise
+                actor_state = actor.choose_action(state)
+                actor_state = np.clip(np.random.normal(actor_state, random_exploration), *ACTION_BOUND)  # add randomness
+                # send action of actor to grass cutter env
+                # get state or sensor info, reward value and done varibe
+                # state_, reward, done = env.move(actor_state)
+                move = get_valid_move(actor_state)
+                print("Move" + move)
+                result=step(session['id'], move)
+                done=result["done"]
+                reward = result["reward"]
+                print(move, result)
+
+                state_ = get_input_to_dqn_fron_sensors(result["sensors"])
+                if result["sensors"] in ["OutOfBondaries", "Stuck"]:
+                    print("Session ended: " + result["sensors"])
+                    if RENDER_MODE:
+                        pyautogui.hotkey('ctrl', 'w')
+                    break
+                # add move to memory
+                memory_replay_buffer.store_transition(state, actor_state, reward, state_)
+
+                # start learning after memory is full
+                if memory_replay_buffer.memory_counter > MEMORY_CAPACITY:
+                    random_exploration = max([random_exploration * .9995, VAR_MIN])  # decay the action randomness
+                    b_M = memory_replay_buffer.sample_buffer(BATCH_SIZE)
+                    b_s = b_M[:, :STATE_DIM]
+                    b_a = b_M[:, STATE_DIM: STATE_DIM + ACTION_DIM]
+                    b_r = b_M[:, -STATE_DIM - 1: -STATE_DIM]
+                    b_s_ = b_M[:, -STATE_DIM:]
+
+                    # trigger Critic learn function
+                    critic.learn(b_s, b_a, b_r, b_s_)
+                    # trigger Actor learn function
+                    actor.learn(b_s)
+
+                state = state_
+                # increment step by one
+                ep_step += 1
+
+            if done or t == MAX_EP_STEPS - 1:
+                print('Iteration:', ep,
+                        '| Steps taken: %i' % int(ep_step),
+                        '| Random Exploration: %.2f' % random_exploration
+                        )
+                break
+
+    # Save model for future prediction
+    if os.path.isdir(path): shutil.rmtree(path)
+    os.mkdir(path)
+    ckpt_path = os.path.join(path, 'model.ckpt')
+    save_path = saver.save(sess, ckpt_path, write_meta_graph=True) 
+    print("\n====> Saving trained model into: %s\n" % save_path)
+
+
+def predict():
+    while True:
+        state = np.array([3.0])
+        done = False
+        result = {"sensors": None}
+        move = None
+        VALID_MOVES = ['Forward', 'Backward',  'TurnLeft', 'TurnRight']
         session = initsession()
-        MAX_EP_STEPS = session['stepsLimit']
         print(session["id"])
         if RENDER_MODE:
-            webbrowser.open_new_tab(BASE_URL+"visualize/" + session["id"])
-        while not done:
-            print("Episode: " + str(ep))
-            # little logic to not cross border or bump to obstacle
-            validmoves_local=VALID_MOVES
-            if result["sensors"] in ["Obstacle", "Border"]:
-                if move == "Forward":
-                    validmoves_local=["Backward"]
-                elif move == "Backward":
-                    validmoves_local=["Forward"]
+            webbrowser.open(BASE_URL+"visualize/" + session["id"])
+        while True:
             if result["sensors"]:
                 print("Sensors:" + result["sensors"])
                 state = get_input_to_dqn_fron_sensors(result["sensors"])
             else:
                 state = np.array([3.0])
-            # Added exploration noise
             actor_state = actor.choose_action(state)
-            actor_state = np.clip(np.random.normal(actor_state, random_exploration), *ACTION_BOUND)  # add randomness
-            # send action of actor to grass cutter env
-            # get state or sensor info, reward value and done varibe
-            # state_, reward, done = env.move(actor_state)
             move = get_valid_move(actor_state)
             print("Move" + move)
             result=step(session['id'], move)
             done=result["done"]
             reward = result["reward"]
             print(move, result)
-
             state_ = get_input_to_dqn_fron_sensors(result["sensors"])
             if result["sensors"] in ["OutOfBondaries", "Stuck"]:
-                print("Session ended: " + result["sensors"])
-                break
-            # add move to memory
-            memory_replay_buffer.store_transition(state, actor_state, reward, state_)
-
-            # start learning after memory is full
-            if memory_replay_buffer.memory_counter > MEMORY_CAPACITY:
-                random_exploration = max([random_exploration * .9995, VAR_MIN])  # decay the action randomness
-                b_M = memory_replay_buffer.sample_buffer(BATCH_SIZE)
-                b_s = b_M[:, :STATE_DIM]
-                b_a = b_M[:, STATE_DIM: STATE_DIM + ACTION_DIM]
-                b_r = b_M[:, -STATE_DIM - 1: -STATE_DIM]
-                b_s_ = b_M[:, -STATE_DIM:]
-
-                # trigger Critic learn function
-                critic.learn(b_s, b_a, b_r, b_s_)
-                # trigger Actor learn function
-                actor.learn(b_s)
-
+                    print("Session ended: " + result["sensors"])
+                    if RENDER_MODE:
+                        pyautogui.hotkey('ctrl', 'w')
+                    break
             state = state_
-            # increment step by one
-            ep_step += 1
-
-        if done or t == MAX_EP_STEPS - 1:
-            print('Iteration:', ep,
-                    '| Steps taken: %i' % int(ep_step),
-                    '| Random Exploration: %.2f' % random_exploration
-                    )
+            if done:
+                break
+        if done:
             break
 
-# Save model for future prediction
-if os.path.isdir(path): shutil.rmtree(path)
-os.mkdir(path)
-ckpt_path = os.path.join(path, 'model.ckpt')
-save_path = saver.save(sess, ckpt_path, write_meta_graph=True)
-print("\n====> Saving trained model into: %s\n" % save_path)
+if PREDICT_MODE:
+    predict()
+else:
+    train()
