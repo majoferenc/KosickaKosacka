@@ -37,18 +37,18 @@ if args.predict_mode:
     PREDICT_MODE = True
 
 # maximum number of episodes
-MAX_EPISODES = 10
+MAX_EPISODES = 10_000
 LR_A = 1e-4  # learning rate for Actor, or simply 0.0001
 LR_C = 1e-4  # learning rate for Critic, or simply 0.0001
 # value of reward
-GAMMA = 1.0
+GAMMA = 0.9
 # Actor iteration
 REPLACE_ITER_A = 800
 # Critic iteration
 REPLACE_ITER_C = 700
 # capacity of memory buffer
-MEMORY_CAPACITY = 1000
-BATCH_SIZE = 16
+MEMORY_CAPACITY = 10_000
+BATCH_SIZE = 80
 VAR_MIN = 0.1
 
 # state dimension is equal to sensors number
@@ -276,12 +276,12 @@ else:
 def step(sessionid, move):
     try:
         response = requests.get(BASE_URL+"step/", params={"id": sessionid, "move": move})
+        time.sleep(0.01)
         if response:
-            return response.json()
+            return response.json(), response.status_code
         else:
             return step(sessionid, move)
     except:
-        exit(1)
         print("Failed getting new step. Trying again...")
         return step(sessionid, move)
 
@@ -291,9 +291,11 @@ def initsession():
         if response:
             print(response.json())
             return response.json()
+            exit(1)
         else:
             return initsession()
     except:
+        exit(1)
         print("Failed creating new session. Trying again...")
         return initsession()
 
@@ -337,17 +339,25 @@ def train():
                 move = get_valid_move(actor_state)
                 print("Move" + move)
                 # Create front sensor data:
-                result=step(session['id'], 'Forward')
-                step(session['id'], 'Backward')
-                
-                result=step(session['id'], move)
+                result, status_code = step(session['id'], 'Forward')
+                backward_step_result, status_code=step(session['id'], 'Backward')
                 if 'done' in result:
                     done=result['done']
+                if 'done' in backward_step_result:
+                    done=backward_step_result['done']
+
+                real_step_result, status_code = step(session['id'], move)
+
+                if status_code == 400:
+                    break
+                    
+                if 'done' in real_step_result:
+                    done=real_step_result['done']
                 else:
                     break
-                reward = result["reward"]
+                reward = real_step_result["reward"]
                 # change reward mechanism
-                if result["reward"] == 0:
+                if real_step_result["reward"] == 0:
                     reward = -1
                 else:
                     reward = 0
@@ -375,13 +385,23 @@ def train():
                 ep_step += 1
                 print(move, result)
 
+                if real_step_result["sensors"] in ["OutOfBondaries", "Stuck"]:
+                    print("====> Session ended: " + real_step_result["sensors"])
+                    if RENDER_MODE:
+                        pyautogui.hotkey('ctrl', 'w')
+                    break
+                if backward_step_result["sensors"] in ["OutOfBondaries", "Stuck"]:
+                    print("====> Session ended: " + backward_step_result["sensors"])
+                    if RENDER_MODE:
+                        pyautogui.hotkey('ctrl', 'w')
+                    break
                 if result["sensors"] in ["OutOfBondaries", "Stuck"]:
                     print("====> Session ended: " + result["sensors"])
                     if RENDER_MODE:
                         pyautogui.hotkey('ctrl', 'w')
                     break
                 if done is True:
-                    print("====> Session ended: " + result["sensors"])
+                    print("====> Session ended: " + real_step_result["sensors"])
                     if RENDER_MODE:
                         pyautogui.hotkey('ctrl', 'w')
                     break
@@ -423,11 +443,11 @@ def predict():
             print("Move" + move)
 
             # Create front sensor data:
-            result=step(session['id'], 'Forward')
-            step(session['id'], 'Backward')
+            result, status_code=step(session['id'], 'Forward')
+            backward_step_result, status_code = step(session['id'], 'Backward')
 
             # Do real move
-            real_result=step(session['id'], move)
+            real_result, status_code=step(session['id'], move)
             done=real_result["done"]
             # change reward mechanism
             if result["reward"] == 0:
