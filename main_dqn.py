@@ -275,6 +275,7 @@ else:
 
 def step(sessionid, move):
     response = requests.get(BASE_URL+"step/", params={"id": sessionid, "move": move})
+    time.sleep(0.01)
     if response:
         return response.json(), response.status_code
     else:
