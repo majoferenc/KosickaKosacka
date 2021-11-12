@@ -1,3 +1,4 @@
+import time
 import random
 import requests
 
@@ -20,9 +21,9 @@ RENDER_MODE = True
 PREDICT_MODE = False
 
 # maximum steps of episode/iteration
-MAX_EP_STEPS = 600
+MAX_EP_STEPS = 500 # is overwriten by environment
 # maximum number of episodes
-MAX_EPISODES = 500
+MAX_EPISODES = 100000
 LR_A = 1e-4  # learning rate for Actor, or simply 0.0001
 LR_C = 1e-4  # learning rate for Critic, or simply 0.0001
 # value of reward
@@ -41,11 +42,29 @@ STATE_DIM = 1
 # in our case action dimension is 1
 ACTION_DIM = 1
 # defines all posibilities of action
-ACTION_BOUND = [-1,1]
+ACTION_BOUND = [0,3]
 
 # Disable Tensorflow eager execution
 tf.compat.v1.disable_eager_execution()
 
+def get_valid_move(dqn_answer):
+    dqn_answer_rounded = int(dqn_answer)
+    return {
+        0: 'Forward',
+        1: 'Backward',
+        2: 'TurnLeft',
+        3: 'TurnRight'
+    }.get(dqn_answer_rounded, 'Forward')    # Forward is default if x is not found
+
+def get_input_to_dqn_fron_sensors(sensor_value):
+    return {
+        "Obstacle": np.array([1.0]),
+        "Border": np.array([2.0]),
+        "Cut": np.array([3.0]),
+        "OutOfBondaries": np.array([4.0]),
+        "Stuck": np.array([5.0]),
+        "Charged": np.array([6.0])
+    }.get(sensor_value, np.array([7.0]))    # Forward is default if x is not found
 
 # Memory storing all action moves of Actors NN
 class Memory(object):
@@ -252,18 +271,15 @@ for ep in range(MAX_EPISODES):
     ep_step = 0
 
     for t in range(MAX_EP_STEPS):
-        # TODO use state from env
-        state = np.array([1.0])
-        print(state)
+        state = get_input_to_dqn_fron_sensors(result["sensors"])
+        print(result["sensors"])
         # Added exploration noise
         actor_state = actor.choose_action(state)
         actor_state = np.clip(np.random.normal(actor_state, random_exploration), *ACTION_BOUND)  # add randomness
 
-
-        sessionid = initsession()['id']
-
-
-        #input("Visualization: " +BASE_URL+"visualize/sessionid+"\nPress Enter to continue...")
+        session = initsession()
+        MAX_EP_STEPS = session['stepsLimit']
+        #input("Visualization: " +BASE_URL+"visualize/sessionid+")
         while not done:
             # little logic to not cross border or bump to obstacle
             validmoves_local=VALID_MOVES
@@ -273,25 +289,16 @@ for ep in range(MAX_EPISODES):
                 elif move == "Backward":
                     validmoves_local=["Forward"]
 
-            # move=random.choice(validmoves_local)
-            
-            
-            # to action selection for exploration
-            print("-------------")
-            print(int(actor_state))
-
             # send action of actor to grass cutter env
             # get state or sensor info, reward value and done varibe
             # state_, reward, done = env.move(actor_state)
-            move = 'Forward'
-            result=step(sessionid, move)
-            print(result)
+            move = get_valid_move(actor_state)
+            result=step(session['id'], move)
             done=result["done"]
             reward = result["reward"]
             print(move, result)
 
-            # TODO get new state from env
-            state_ = np.array([1.0])
+            state_ = get_input_to_dqn_fron_sensors(result["sensors"])
             # add move to memory
             memory_replay_buffer.store_transition(state, actor_state, reward, state_)
 
