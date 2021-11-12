@@ -7,7 +7,7 @@ def step(session_id, move):
     print("Calling step endpoint with paramets id: {} and move {}".format(session_id, move.value))
     response = requests.get(BASE_URL+"step/", params={"id": session_id, "move": move.value})
     print(response.json())
-    return reponse.json()
+    return response.json()
 
 
 def init_session(map_name):
