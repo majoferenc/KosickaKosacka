@@ -11,7 +11,7 @@ class Model:
         self.steps_limit = init_json["stepsLimit"]
         
         # step response data
-        self.done = false
+        self.done = False
         self.reward = None
         self.sensor = None
         self.charger_distance = None
@@ -39,7 +39,7 @@ class Model:
                 for move in moves_to_execute:
                     self.execute_queue.put(move)
             
-            step_response = api_util.step(self.session_id, self.execute_queue.get())
+            step_response = api.step(self.session_id, self.execute_queue.get())
             self.update_step_data(step_response)
             
             
