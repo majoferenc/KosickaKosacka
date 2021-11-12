@@ -1,6 +1,6 @@
 from enum import Enum
 
-class SupportedMove(Enum):
+class SupportedMove(str, Enum):
     FORWARD = "Forward"
     BACKWARD = "Backward"
     TURN_LEFT = "TurnLeft"
