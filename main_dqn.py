@@ -23,7 +23,7 @@ PREDICT_MODE = False
 # maximum steps of episode/iteration
 MAX_EP_STEPS = 500 # is overwriten by environment
 # maximum number of episodes
-MAX_EPISODES = 100000
+MAX_EPISODES = 10
 LR_A = 1e-4  # learning rate for Actor, or simply 0.0001
 LR_C = 1e-4  # learning rate for Critic, or simply 0.0001
 # value of reward
@@ -269,18 +269,13 @@ def initsession():
 random_exploration = 2.  # control exploration
 for ep in range(MAX_EPISODES):
     ep_step = 0
-
+    done = False
     for t in range(MAX_EP_STEPS):
-        state = get_input_to_dqn_fron_sensors(result["sensors"])
-        print(result["sensors"])
-        # Added exploration noise
-        actor_state = actor.choose_action(state)
-        actor_state = np.clip(np.random.normal(actor_state, random_exploration), *ACTION_BOUND)  # add randomness
-
         session = initsession()
         MAX_EP_STEPS = session['stepsLimit']
         #input("Visualization: " +BASE_URL+"visualize/sessionid+")
         while not done:
+            print("Episode: " + str(ep))
             # little logic to not cross border or bump to obstacle
             validmoves_local=VALID_MOVES
             if result["sensors"] in ["Obstacle", "Border"]:
@@ -288,17 +283,28 @@ for ep in range(MAX_EPISODES):
                     validmoves_local=["Backward"]
                 elif move == "Backward":
                     validmoves_local=["Forward"]
-
+            if result["sensors"]:
+                print("Sensors:" + result["sensors"])
+                state = get_input_to_dqn_fron_sensors(result["sensors"])
+            else:
+                state = np.array([3.0])
+            # Added exploration noise
+            actor_state = actor.choose_action(state)
+            actor_state = np.clip(np.random.normal(actor_state, random_exploration), *ACTION_BOUND)  # add randomness
             # send action of actor to grass cutter env
             # get state or sensor info, reward value and done varibe
             # state_, reward, done = env.move(actor_state)
             move = get_valid_move(actor_state)
+            print("Move" + move)
             result=step(session['id'], move)
             done=result["done"]
             reward = result["reward"]
             print(move, result)
 
             state_ = get_input_to_dqn_fron_sensors(result["sensors"])
+            if result["sensors"] in ["OutOfBondaries", "Stuck"]:
+                print("Session ended: " + result["sensors"])
+                break
             # add move to memory
             memory_replay_buffer.store_transition(state, actor_state, reward, state_)
 
