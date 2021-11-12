@@ -37,18 +37,16 @@ if args.predict_mode:
     PREDICT_MODE = True
 
 # maximum number of episodes
-MAX_EPISODES = 10_000
+MAX_EPISODES = 100_000
 LR_A = 1e-4  # learning rate for Actor, or simply 0.0001
 LR_C = 1e-4  # learning rate for Critic, or simply 0.0001
-# value of reward
-GAMMA = 0.9
 # Actor iteration
 REPLACE_ITER_A = 800
 # Critic iteration
 REPLACE_ITER_C = 700
 # capacity of memory buffer
-MEMORY_CAPACITY = 8000
-BATCH_SIZE = 62
+MEMORY_CAPACITY = 20_000
+BATCH_SIZE = 128
 VAR_MIN = 0.1
 
 # state dimension is equal to sensors number
@@ -144,7 +142,7 @@ class Actor(object):
                                         trainable=trainable)(net)
             with tf.compat.v1.variable_scope('a'):
                 # last NN layer, will return final move set of actions, which will Actor take
-                actions = tf.keras.layers.Dense(self.a_dim, activation='linear', kernel_initializer=init_w,
+                actions = tf.keras.layers.Dense(self.a_dim, activation=None, kernel_initializer=init_w,
                                                 name='a', trainable=trainable)(net)
                 scaled_a = tf.multiply(actions, self.action_bound,
                                        name='scaled_a')  # Scale output to -action_bound to action_bound
@@ -174,7 +172,7 @@ class Actor(object):
 
 # Second NN, inform Actor how good was the action taken and how it should adjust
 class Critic(object):
-    def __init__(self, sess, state_dim, action_dim, learning_rate, gamma, t_replace_iter, a, a_):
+    def __init__(self, sess, state_dim, action_dim, learning_rate, t_replace_iter, a, a_):
         # tensorflow session
         self.sess = sess
         # state dimension
@@ -182,7 +180,6 @@ class Critic(object):
         # action dimension
         self.a_dim = action_dim
         self.lr = learning_rate
-        self.gamma = gamma
         self.t_replace_iter = t_replace_iter
         self.t_replace_counter = 0
 
@@ -201,7 +198,7 @@ class Critic(object):
                                                         scope='Critic/target_net')
 
         with tf.compat.v1.variable_scope('target_q'):
-            self.target_q = REWARD + self.gamma * self.q_
+            self.target_q = REWARD * self.q_
 
         with tf.compat.v1.variable_scope('TD_error'):
             self.loss = tf.reduce_mean(input_tensor=tf.math.squared_difference(self.target_q, self.q))
@@ -254,7 +251,7 @@ sess = tf.compat.v1.Session()
 
 # Create actor and critic
 actor = Actor(sess, ACTION_DIM, ACTION_BOUND[1], LR_A, REPLACE_ITER_A)
-critic = Critic(sess, STATE_DIM, ACTION_DIM, LR_C, GAMMA, REPLACE_ITER_C, actor.a, actor.a_)
+critic = Critic(sess, STATE_DIM, ACTION_DIM, LR_C, REPLACE_ITER_C, actor.a, actor.a_)
 # Setting Critic as Actors gradient layer
 actor.add_grad_to_graph(critic.a_grads)
 
@@ -286,7 +283,6 @@ def initsession():
         else:
             return initsession()
     except:
-        exit(1)
         print("Failed creating new session. Trying again...")
         return initsession()
 
