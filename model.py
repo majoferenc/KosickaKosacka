@@ -4,11 +4,11 @@ from sensor_response import SensorResponse
 from supported_move import SupportedMove
 
 class Model:
-    def __init__(self, session_id, power_max, steps_limit):
+    def __init__(self, init_json):
         # init response data
-        self.session_id = session_id
-        self.power_max = power_max
-        self.steps_limit = steps_limit
+        self.session_id = init_json["session_id"]
+        self.power_max = init_json["power_max"]
+        self.steps_limit = init_json["steps_limit"]
         
         # step response data
         self.done = false
