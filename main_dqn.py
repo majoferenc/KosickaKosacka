@@ -47,8 +47,8 @@ REPLACE_ITER_A = 800
 # Critic iteration
 REPLACE_ITER_C = 700
 # capacity of memory buffer
-MEMORY_CAPACITY = 10_000
-BATCH_SIZE = 80
+MEMORY_CAPACITY = 8000
+BATCH_SIZE = 62
 VAR_MIN = 0.1
 
 # state dimension is equal to sensors number
@@ -135,20 +135,16 @@ class Actor(object):
             init_b = tf.constant_initializer(0.001)
             # first NN layer, regular densely-connected NN layer, 100 neurons, using RELU(Rectified Linear Unit)
             # activation function, which defines, when neuron will activate
-            net = tf.keras.layers.Dense(256, activation=tf.nn.relu,
+            net = tf.keras.layers.Dense(100, activation=tf.nn.relu,
                                         kernel_initializer=init_w, bias_initializer=init_b, name='l1',
                                         trainable=trainable)(s)
             # second NN layer, regular densely-connected NN layer, 20 neurons, using RELU
-            net = tf.keras.layers.Dense(256, activation=tf.nn.relu,
-                                        kernel_initializer=init_w, bias_initializer=init_b, name='l2',
-                                        trainable=trainable)(net)
-            # second NN layer, regular densely-connected NN layer, 20 neurons, using RELU
             net = tf.keras.layers.Dense(20, activation=tf.nn.relu,
-                                        kernel_initializer=init_w, bias_initializer=init_b, name='l3',
+                                        kernel_initializer=init_w, bias_initializer=init_b, name='l2',
                                         trainable=trainable)(net)
             with tf.compat.v1.variable_scope('a'):
                 # last NN layer, will return final move set of actions, which will Actor take
-                actions = tf.keras.layers.Dense(self.a_dim, activation=tf.nn.tanh, kernel_initializer=init_w,
+                actions = tf.keras.layers.Dense(self.a_dim, activation='linear', kernel_initializer=init_w,
                                                 name='a', trainable=trainable)(net)
                 scaled_a = tf.multiply(actions, self.action_bound,
                                        name='scaled_a')  # Scale output to -action_bound to action_bound
@@ -275,7 +271,7 @@ else:
 
 def step(sessionid, move):
     response = requests.get(BASE_URL+"step/", params={"id": sessionid, "move": move})
-    time.sleep(0.01)
+    time.sleep(0.005)
     if response:
         return response.json(), response.status_code
     else:
@@ -283,7 +279,7 @@ def step(sessionid, move):
 
 def initsession():
     try:
-        response = requests.get(BASE_URL+"init/")
+        response = requests.get(BASE_URL+"init/",  params={"mapName": "PuertoRico"})
         if response:
             print(response.json())
             return response.json(), response.status_code
