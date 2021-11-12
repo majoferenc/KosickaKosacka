@@ -336,12 +336,11 @@ def train():
                 step(session['id'], 'Backward')
                 
                 result=step(session['id'], move)
-                if result['done']:
+                if 'done' in result:
                     done=result['done']
                 else:
-                    done = False
+                    break
                 reward = result["reward"]
-                print(move, result)
                 # change reward mechanism
                 if result["reward"] == 0:
                     reward = -1
@@ -349,11 +348,6 @@ def train():
                     reward = 0
                     
                 state_ = get_input_to_dqn_fron_sensors(result["sensors"])
-                if result["sensors"] in ["OutOfBondaries", "Stuck"]:
-                    print("Session ended: " + result["sensors"])
-                    if RENDER_MODE:
-                        pyautogui.hotkey('ctrl', 'w')
-                    break
                 # add move to memory
                 memory_replay_buffer.store_transition(state, actor_state, reward, state_)
 
@@ -374,6 +368,17 @@ def train():
                 state = state_
                 # increment step by one
                 ep_step += 1
+                print(move, result)
+                if result["sensors"] in ["OutOfBondaries", "Stuck"]:
+                    print("====> Session ended: " + result["sensors"])
+                    if RENDER_MODE:
+                        pyautogui.hotkey('ctrl', 'w')
+                    break
+                if done is True:
+                    print("====> Session ended: " + result["sensors"])
+                    if RENDER_MODE:
+                        pyautogui.hotkey('ctrl', 'w')
+                    break
 
             if done or t == MAX_EP_STEPS - 1:
                 print('Iteration:', ep,
@@ -416,21 +421,21 @@ def predict():
             step(session['id'], 'Backward')
 
             # Do real move
-            step(session['id'], move)
-            done=result["done"]
+            real_result=step(session['id'], move)
+            done=real_result["done"]
             # change reward mechanism
             if result["reward"] == 0:
                 reward = -1
             else:
                 reward = 0
             print("Our Reward:" + reward)
-            print(move, result)
+            print(move, real_result)
             state_ = get_input_to_dqn_fron_sensors(result["sensors"])
-            if result["sensors"] in ["OutOfBondaries", "Stuck"]:
-                    print("Session ended: " + result["sensors"])
-                    if RENDER_MODE:
-                        pyautogui.hotkey('ctrl', 'w')
-                    break
+            if real_result["sensors"] in ["OutOfBondaries", "Stuck"]:
+                print("Session ended: " + real_result["sensors"])
+                if RENDER_MODE:
+                    pyautogui.hotkey('ctrl', 'w')
+                break
             state = state_
             if done:
                 break
