@@ -2,8 +2,6 @@ import argparse
 import api_util as api
 from model import Model
 
-BASE_URL = "http://169.51.194.78:31798/"
-
 cli = argparse.ArgumentParser()
 cli.add_argument("--maps", nargs="+", default=[],)
 args = cli.parse_args()
