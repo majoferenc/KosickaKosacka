@@ -6,7 +6,7 @@ from supported_move import SupportedMove
 class Model:
     def __init__(self, init_json):
         # init response data
-        self.session_id = init_json["session_id"]
+        self.session_id = init_json["id"]
         self.power_max = init_json["power_max"]
         self.steps_limit = init_json["steps_limit"]
         
