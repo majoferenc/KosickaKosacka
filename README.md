@@ -18,7 +18,25 @@ Open Anaconda Powershell Prompt:
 
     pip install -r requirements.txt --user
 
-## Run Project
-
-    python main.py
+## Run algo version
     
+    python main.py
+
+
+## Run NN verision
+### Run Training Mode
+
+    python main_dqn.py
+    
+### Run Training Mode with Rendering Mode
+
+    python main_dqn.py --render_mode True
+
+### Run Predict Mode
+
+    python main_dqn.py --predict_mode True
+
+### Run Predict Mode with Rendering Mode
+
+    python main_dqn.py --predict_mode True --render_mode True
+

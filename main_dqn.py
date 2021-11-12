@@ -37,7 +37,7 @@ if args.predict_mode:
     PREDICT_MODE = True
 
 # maximum number of episodes
-MAX_EPISODES = 500
+MAX_EPISODES = 100_000
 LR_A = 1e-4  # learning rate for Actor, or simply 0.0001
 LR_C = 1e-4  # learning rate for Critic, or simply 0.0001
 # value of reward
@@ -148,7 +148,7 @@ class Actor(object):
                                         trainable=trainable)(net)
             with tf.compat.v1.variable_scope('a'):
                 # last NN layer, will return final move set of actions, which will Actor take
-                actions = tf.keras.layers.Dense(self.a_dim, activation='softmax', kernel_initializer=init_w,
+                actions = tf.keras.layers.Dense(self.a_dim, activation=tf.nn.tanh, kernel_initializer=init_w,
                                                 name='a', trainable=trainable)(net)
                 scaled_a = tf.multiply(actions, self.action_bound,
                                        name='scaled_a')  # Scale output to -action_bound to action_bound
@@ -274,15 +274,23 @@ else:
     sess.run(tf.compat.v1.global_variables_initializer())
 
 def step(sessionid, move):
-    reponse = requests.get(BASE_URL+"step/", params={"id": sessionid, "move": move})
-    return reponse.json()
-
+    try:
+        reponse = requests.get(BASE_URL+"step/", params={"id": sessionid, "move": move})
+        time.sleep(0.01)
+        return reponse.json()
+    except:
+        print("Failed getting new step. Trying again...")
+        return step(sessionid, move)
 
 def initsession():
-    response = requests.get(BASE_URL+"init/")
-    print(response.json())
-    return response.json()
-    
+    try:
+        response = requests.get(BASE_URL+"init/")
+        print(response.json())
+        return response.json()
+    except:
+        print("Failed creating new session. Trying again...")
+        return initsession()
+
 
 def train():
     # maximum steps of episode/iteration
