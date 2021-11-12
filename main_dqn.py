@@ -274,15 +274,10 @@ else:
     sess.run(tf.compat.v1.global_variables_initializer())
 
 def step(sessionid, move):
-    try:
-        response = requests.get(BASE_URL+"step/", params={"id": sessionid, "move": move})
-        time.sleep(0.01)
-        if response:
-            return response.json(), response.status_code
-        else:
-            return step(sessionid, move)
-    except:
-        print("Failed getting new step. Trying again...")
+    response = requests.get(BASE_URL+"step/", params={"id": sessionid, "move": move})
+    if response:
+        return response.json(), response.status_code
+    else:
         return step(sessionid, move)
 
 def initsession():
@@ -290,8 +285,7 @@ def initsession():
         response = requests.get(BASE_URL+"init/")
         if response:
             print(response.json())
-            return response.json()
-            exit(1)
+            return response.json(), response.status_code
         else:
             return initsession()
     except:
@@ -304,7 +298,10 @@ def train():
     # maximum steps of episode/iteration
     MAX_EP_STEPS = 500 # is overwriten by environment
     done = False
+    status_code = 202
     result = {"sensors": None}
+    backward_step_result =  {"sensors": None}
+    real_step_result =  {"sensors": None}
     move = None
     VALID_MOVES = ['Forward', 'Backward',  'TurnLeft', 'TurnRight']
     random_exploration = 2.  # control exploration
@@ -312,7 +309,9 @@ def train():
         ep_step = 0
         done = False
         for t in range(MAX_EP_STEPS):
-            session = initsession()
+            session, status_code = initsession()
+            if status_code > 202:
+                    break
             MAX_EP_STEPS = session['stepsLimit']
             print(session["id"])
             if RENDER_MODE:
@@ -337,10 +336,33 @@ def train():
                 # send action of actor to grass cutter env
                 # get state or sensor info, reward value and done varibe
                 move = get_valid_move(actor_state)
-                print("Move" + move)
                 # Create front sensor data:
                 result, status_code = step(session['id'], 'Forward')
+                
+                if status_code > 202:
+                    ep_step += 1
+                    break
+                
+                if result["sensors"] in ["OutOfBondaries", "Stuck"]:
+                    print("====> Session ended: " + result["sensors"])
+                    if RENDER_MODE:
+                        ep_step += 1
+                        pyautogui.hotkey('ctrl', 'w')
+                    break
+
                 backward_step_result, status_code=step(session['id'], 'Backward')
+                
+                if status_code > 202:
+                    ep_step += 1
+                    break
+                
+                if backward_step_result["sensors"] in ["OutOfBondaries", "Stuck"]:
+                    print("====> Session ended: " + backward_step_result["sensors"])
+                    if RENDER_MODE:
+                        ep_step += 1
+                        pyautogui.hotkey('ctrl', 'w')
+                    break
+
                 if 'done' in result:
                     done=result['done']
                 if 'done' in backward_step_result:
@@ -348,12 +370,14 @@ def train():
 
                 real_step_result, status_code = step(session['id'], move)
 
-                if status_code == 400:
+                if status_code > 202:                
+                    ep_step += 1
                     break
-                    
+
                 if 'done' in real_step_result:
                     done=real_step_result['done']
                 else:
+                    ep_step += 1
                     break
                 reward = real_step_result["reward"]
                 # change reward mechanism
@@ -387,26 +411,19 @@ def train():
 
                 if real_step_result["sensors"] in ["OutOfBondaries", "Stuck"]:
                     print("====> Session ended: " + real_step_result["sensors"])
-                    if RENDER_MODE:
-                        pyautogui.hotkey('ctrl', 'w')
-                    break
-                if backward_step_result["sensors"] in ["OutOfBondaries", "Stuck"]:
-                    print("====> Session ended: " + backward_step_result["sensors"])
-                    if RENDER_MODE:
-                        pyautogui.hotkey('ctrl', 'w')
-                    break
-                if result["sensors"] in ["OutOfBondaries", "Stuck"]:
-                    print("====> Session ended: " + result["sensors"])
+                    ep_step += 1
                     if RENDER_MODE:
                         pyautogui.hotkey('ctrl', 'w')
                     break
                 if done is True:
                     print("====> Session ended: " + real_step_result["sensors"])
+                    ep_step += 1
                     if RENDER_MODE:
                         pyautogui.hotkey('ctrl', 'w')
                     break
 
-            if done or t == MAX_EP_STEPS - 1:
+            if done or t == MAX_EP_STEPS - 1 or status_code > 202 or result["sensors"] in ["OutOfBondaries", "Stuck"] or real_step_result["sensors"] in ["OutOfBondaries", "Stuck"] or backward_step_result["sensors"] in ["OutOfBondaries", "Stuck"]:
+                ep_step += 1
                 print('Iteration:', ep,
                         '| Steps taken: %i' % int(ep_step),
                         '| Random Exploration: %.2f' % random_exploration
@@ -428,7 +445,9 @@ def predict():
         result = {"sensors": None}
         move = None
         VALID_MOVES = ['Forward', 'Backward',  'TurnLeft', 'TurnRight']
-        session = initsession()
+        session, status_code = initsession()
+        if status_code > 202:
+            break
         print(session["id"])
         if RENDER_MODE:
             webbrowser.open(BASE_URL+"visualize/" + session["id"])
@@ -444,10 +463,15 @@ def predict():
 
             # Create front sensor data:
             result, status_code=step(session['id'], 'Forward')
+            if status_code > 202:
+                    break
             backward_step_result, status_code = step(session['id'], 'Backward')
-
+            if status_code > 202:
+                    break
             # Do real move
             real_result, status_code=step(session['id'], move)
+            if status_code > 202:
+                    break
             done=real_result["done"]
             # change reward mechanism
             if result["reward"] == 0:
@@ -471,3 +495,4 @@ if PREDICT_MODE:
     predict()
 else:
     train()
+    
