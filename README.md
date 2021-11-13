@@ -26,25 +26,24 @@ Open Anaconda Powershell Prompt:
     
     python main.py --render_mode --maps Greenland Localhost 'Mapname with spaces' --base_url http://169.51.194.78:31798/
 
-
-## Run NN verision
-### Run Training Mode
+## NN version (Don't run during during Hack@Home finals, WIP)
+### Training Mode
 
     python main_dqn.py
     
-### Run Training Mode with Rendering Mode
+### Training Mode with Rendering Mode
 
     python main_dqn.py --render_mode True --maps Greenland Localhost 'Mapname with spaces' --base_url http://169.51.194.78:31798/
 
-### Run Predict Mode
+### Predict Mode
 
     python main_dqn.py --predict_mode True --maps Greenland Localhost 'Mapname with spaces' --base_url http://169.51.194.78:31798/
 
-### Run Predict Mode with Rendering Mode
+### Predict Mode with Rendering Mode
 
     python main_dqn.py --predict_mode True --render_mode True --maps Greenland Localhost 'Mapname with spaces' --base_url http://169.51.194.78:31798/
 
 
-###
-    conda activate C:\Users\majof\anaconda3\envs\tf_test_env2
+### Helper on Windows
+    conda activate C:\Users\<your-username>\anaconda3\envs\tf_test_env2
     cd ../../IBM/Hack@Home2021/KosickaKosacka
