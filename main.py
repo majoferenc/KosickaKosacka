@@ -4,7 +4,7 @@ from model import Model
 
 cli = argparse.ArgumentParser()
 cli.add_argument("--maps", nargs="+", default=[],)
-cli.add_argument("--base_url", nargs="+", default="http://localhost/")
+cli.add_argument("--base_url", nargs="+", default=["http://localhost/"])
 args = cli.parse_args()
 
 print("maps: %r" % args.maps)
