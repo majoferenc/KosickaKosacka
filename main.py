@@ -10,6 +10,7 @@ args = cli.parse_args()
 
 print("maps: %r" % args.maps)
 print("base_url: %s" % str(args.base_url))
+print("render_mode: %s" % str(args.render_mode))
 
 for map in args.maps:
     print("map: %s" % map)
