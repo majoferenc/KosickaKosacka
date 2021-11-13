@@ -3,6 +3,7 @@ from enum import Enum
 class PositionState(int, Enum):
     OBSTACLE = 1
     BORDER = 2
+    # None or Cut
     GRASS = 3
     CHARGER = 4
 
