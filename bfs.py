@@ -28,3 +28,5 @@ def bfs(start_point: Point, map: [Point, SensorResponse]):
                 bfs_queue.put(neighbour)
                 passed[i] = neighbour
                 predchodca[i] = neighbour, point
+
+    # TODO return directions

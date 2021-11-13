@@ -5,6 +5,7 @@ from supported_move import SupportedMove
 import webbrowser, pyautogui
 import lawn_mower as lawn_mower
 
+
 class Model:
     def __init__(self, init_json, base_url, render_mode):
         # init response data
@@ -41,6 +42,7 @@ class Model:
                 need_go_to_charger, moves_to_charger = False
                 
                 if need_go_to_charger:
+                    pass
                     # TODO go to charger, steps from dijkstra
                     # self.execute_queue = # get new queue data
 
