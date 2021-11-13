@@ -1,11 +1,12 @@
 import queue
 import numpy as np
 from point import Point
-from sensor_response import SensorResponse
+from map import Map
 from map import PositionState
 
 
-def bfs(start_point: Point, map: [Point, SensorResponse]):
+# najdenie nabojacky
+def bfs(start_point: Point, map: Map):
     bfs_queue = queue.Queue()
     # v mape "predchodca" sa uklada nasledujuci bod v najkratsej ceste ku stanici
     predchodca = []
@@ -18,11 +19,11 @@ def bfs(start_point: Point, map: [Point, SensorResponse]):
 
     while True:
         point = bfs_queue.empty()
-        if map[point] == SensorResponse.CUT or map[point] == SensorResponse.BORDER:
+        if map.getPositionState(point.X, point.Y) == PositionState.GRASS or map.getPositionState(point.X, point.Y) == PositionState.BORDER:
             continue
         for i in range(8):
             neighbour = Point(start_point.X + arround[i][0], start_point.Y + arround[i][1])
-            if map[neighbour] == "lawn_mower":
+            if map.get(neighbour) == PositionState.MOWER:
                 directions[i] = (neighbour, point)
                 return
             if not passed.get(neighbour):
@@ -30,11 +31,20 @@ def bfs(start_point: Point, map: [Point, SensorResponse]):
                 passed[i] = neighbour
                 predchodca[i] = neighbour, point
     return directions
-    # TODO return directions
 
 
 # Testing BFS
 if __name__ == "__main__":
     start_point: Point = Point(0,1)
-    map: [Point, SensorResponse] = [[Point(0,1), SensorResponse.NONE], [Point(0,2), SensorResponse.BORDER]]
-    bfs(start_point, map)
+    map_mock: Map = Map()
+    map_mock.addPair(0,1, PositionState.GRASS)
+    map_mock.addPair(0,2, PositionState.GRASS)
+    map_mock.addPair(0,3, PositionState.GRASS)
+    map_mock.addPair(1,2, PositionState.GRASS)
+    map_mock.addPair(1,4, PositionState.GRASS)
+    map_mock.addPair(1,3, PositionState.GRASS)
+    map_mock.addPair(2,0, PositionState.GRASS)
+    map_mock.addPair(2,1, PositionState.GRASS)
+    map_mock.addPair(2,3, PositionState.CHARGER)
+    directions = bfs(start_point, map_mock)
+    print(directions)
