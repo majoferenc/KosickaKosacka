@@ -69,7 +69,7 @@ class Model:
         self.sensor = step_json["sensors"]
         self.charger_distance = step_json["chargerLocation"]["distance"]
         self.charger_direction_offset = step_json["chargerLocation"]["directionOffset"]
-        if self.sensor is SensorResponse.CHARGE:
+        if self.sensor == SensorResponse.CHARGE:
             self.power_current = self.power_max
         else:
             self.power_current -= 1
@@ -84,9 +84,9 @@ class Model:
 
     def put_mirrored_last_move_into_queue(self):
         self.execute_queue = queue.Queue()
-        if self.last_move is SupportedMove.FORWARD:
+        if self.last_move == SupportedMove.FORWARD:
             self.execute_queue.put(SupportedMove.BACKWARD)
-        elif self.last_move is SupportedMove.BACKWARD:
+        elif self.last_move == SupportedMove.BACKWARD:
             self.execute_queue.put(SupportedMove.BACKWFORWARDARD)
         else:
             raise Exception("Move {} don't have mirrored move.".format(self.last_move))
