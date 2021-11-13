@@ -401,7 +401,8 @@ def train():
                             pyautogui.hotkey('ctrl', 'w')
                         break
 
-                if done or t == MAX_EP_STEPS - 1 or status_code > 202 or result["sensors"] in ["OutOfBondaries", "Stuck"] or real_step_result["sensors"] in ["OutOfBondaries", "Stuck"] or backward_step_result["sensors"] in ["OutOfBondaries", "Stuck"]:
+                if done or t == MAX_EP_STEPS - 1 or status_code > 202 or result["sensors"] in ["OutOfBondaries", "Stuck"] or \
+                    real_step_result["sensors"] in ["OutOfBondaries", "Stuck"] or backward_step_result["sensors"] in ["OutOfBondaries", "Stuck"]:
                     ep_step += 1
                     print('Iteration:', ep,
                             '| Steps taken: %i' % int(ep_step),

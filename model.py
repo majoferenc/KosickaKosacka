@@ -5,6 +5,7 @@ from supported_move import SupportedMove
 import webbrowser, pyautogui
 import lawn_mower as lawn_mower
 
+
 class Model:
     def __init__(self, init_json, base_url, render_mode):
         # init response data
@@ -31,22 +32,19 @@ class Model:
         if self.render_mode is True:
             webbrowser.open(self.base_url+"visualize/" + self.session_id)
         while not self.done:
-            # TODO check if lawner has enough energy with dijkstra algo
-            need_go_to_charger = False
-            
-            if need_go_to_charger:
-                # TODO go to charger, steps from dijkstra
-                self.execute_queue = queue.Queue()
-                # self.execute_queue = # get new queue data
-
             # check if not standing on obstacle or border
             # anti dead mode
-            if self.sensor == SensorResponse.OBSTACLE or self.sensor == SensorResponse.BORDER:
-                # reset execute_queue 
-                self.execute_queue = queue.Queue()
-                
+            if self.sensor == SensorResponse.OBSTACLE or self.sensor == SensorResponse.BORDER:    
                 # execute SupportedMove.FORWARD or SupportedMove.BACKWARD
                 self.put_mirrored_last_move_into_queue()
+            else:
+                # TODO check if lawner has enough energy with dijkstra algo
+                need_go_to_charger, moves_to_charger = False
+                
+                if need_go_to_charger:
+                    pass
+                    # TODO go to charger, steps from dijkstra
+                    # self.execute_queue = # get new queue data
 
             # check if execute queue is empty
             if self.execute_queue.qsize() == 0:
@@ -71,7 +69,7 @@ class Model:
         self.sensor = step_json["sensors"]
         self.charger_distance = step_json["chargerLocation"]["distance"]
         self.charger_direction_offset = step_json["chargerLocation"]["directionOffset"]
-        if self.sensor is SensorResponse.CHARGE:
+        if self.sensor == SensorResponse.CHARGE:
             self.power_current = self.power_max
         else:
             self.power_current -= 1
@@ -79,14 +77,16 @@ class Model:
 
 
     def put_data_array_in_queue(self, array):
+        self.execute_queue = queue.Queue()
         for data in array:
             self.execute_queue.put(data)
 
 
     def put_mirrored_last_move_into_queue(self):
-        if self.last_move is SupportedMove.FORWARD:
+        self.execute_queue = queue.Queue()
+        if self.last_move == SupportedMove.FORWARD:
             self.execute_queue.put(SupportedMove.BACKWARD)
-        elif self.last_move is SupportedMove.BACKWARD:
+        elif self.last_move == SupportedMove.BACKWARD:
             self.execute_queue.put(SupportedMove.BACKWFORWARDARD)
         else:
             raise Exception("Move {} don't have mirrored move.".format(self.last_move))
