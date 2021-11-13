@@ -39,11 +39,11 @@ def convert_move_to_direction(direction, move: SupportedMove):
     return around[index]
 
 class Map:
-    def __init__(self):
+    def __init__(self, start_direction):
         self.map = {}
         self.charger = None
         self.position = Point(0,0)
-        self.direction = [0, 1]
+        self.direction = start_direction
         self.charger_confirmed = False
 
     def update_position(self, direction, position_state: PositionState):
