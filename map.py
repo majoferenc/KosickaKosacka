@@ -4,8 +4,10 @@ from Point import Point
 class PositionState(int, Enum):
     OBSTACLE = 1
     BORDER = 2
+    # None or Cut
     GRASS = 3
     CHARGER = 4
+    MOWER = 5
 
 class Map:
     def __init__(self):

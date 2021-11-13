@@ -10,16 +10,17 @@ VALID_MOVES = ['Forward', 'Backward', 'TurnLeft', 'TurnRight']
 
 path = []
 
+# return position of unknown point, will not do backtracking, this will be done in model
 
 def reverse_step():
     move = path.pop()
     if move == 'TurnRight':
         move = 'TurnLeft'
-    if move == 'TurnLeft':
+    elif move == 'TurnLeft':
         move = 'TurnRight'
-    if move == 'Forward':
+    elif move == 'Forward':
         move = 'Backward'
-    if move == 'Backward':
+    elif move == 'Backward':
         move = 'Forward'
 
     reponse = requests.get(BASE_URL + "step/", params={"id": sessionid, "move": move})
