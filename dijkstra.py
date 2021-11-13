@@ -64,6 +64,59 @@ def dijkstra(destination_point: Point, map: Map):
     return directions
 
 
+def dijkstra_to_unexplored_point(destination_point: Point, map: Map):
+    done = {}
+    not_done = {}
+    # minimal directions to charger
+    directions = {}
+    done[destination_point] = 0
+    directions[destination_point] = [0, 0]
+    for p in map.get_map():
+        not_done[p] = sys.maxsize
+    not_done.pop(destination_point, None)
+    arround = np.array([[1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1]])
+    for a in arround:
+        neighbour = Point(destination_point.X + a[0], destination_point.Y + a[1])
+        if neighbour in not_done and \
+                (map.get_map().get(neighbour, None) == PositionState.GRASS or \
+                 map.get_map().get(neighbour, None) == PositionState.CHARGER):
+            not_done[neighbour] = 1
+            directions[neighbour] = [-a[0], -a[1]]
+    while bool(not_done):
+        # for nd in not_done.items():
+        #     logging.debug(nd[0], nd[1])
+        minimum = sys.maxsize
+        minPoint = None
+        for p in not_done.keys():
+            if minPoint is None or not_done.get(p) < minimum:
+                minimum = not_done.get(p)
+                minPoint = p
+        done[minPoint] = not_done.get(minPoint)
+        # logging.debug("Min point" + str(minPoint))
+        # logging.debug("---------------------")
+        # for nd in done.items():
+        #     logging.debug(nd[0], nd[1])
+        # logging.debug("===")
+        not_done.pop(minPoint, None)
+        for a in arround:
+            neighbour = Point(minPoint.X + a[0], minPoint.Y + a[1])
+
+            if map.get_map().get(neighbour, None) == None
+                return directions, neighbour
+            if neighbour in not_done:
+                if map.get_map().get(neighbour, None) != PositionState.GRASS and map.get_map().get(neighbour,
+                                                                                                   None) != PositionState.CHARGER:
+                    not_done.pop(neighbour, None)
+                    continue
+                turn_distance = abs(directions[minPoint][0] + a[0]) + abs(directions[minPoint][1] + a[1])
+                if turn_distance == 2 and (
+                        (directions[minPoint][0] == 0 and a[0] == 0) or (directions[minPoint][1] == 0 and a[1] == 0)):
+                    turn_distance = 4
+                if not_done.get(neighbour) > done.get(minPoint) + turn_distance + 1:
+                    not_done[neighbour] = done[minPoint] + turn_distance + 1
+                    directions[neighbour] = [-a[0], -a[1]]
+
+
 # Testing BFS
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
