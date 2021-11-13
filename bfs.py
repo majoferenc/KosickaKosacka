@@ -1,11 +1,9 @@
 import queue
 import logging
 import numpy as np
-from Point import Point
+from point import Point
 from map import Map
 from map import PositionState
-
-logging.basicConfig(level=logging.DEBUG)
 
 
 # najdenie nabijacky
@@ -25,7 +23,8 @@ def bfs(start_point: Point, map: Map):
         point = bfs_queue.get()
         logging.debug(point)
         logging.debug(map.get_position_state(point))
-        if map.get_position_state(point) == PositionState.GRASS or map.get_position_state(point) == PositionState.BORDER:
+        if map.get_position_state(point) == PositionState.GRASS or map.get_position_state(
+                point) == PositionState.BORDER:
             logging.debug('continue')
             continue
         logging.debug('after if')
@@ -45,16 +44,17 @@ def bfs(start_point: Point, map: Map):
 
 # Testing BFS
 if __name__ == "__main__":
-    start_point: Point = Point(0,1)
+    logging.basicConfig(level=logging.DEBUG)
+    start_point: Point = Point(0, 1)
     map_mock: Map = Map()
-    map_mock.set_pair(0,1, PositionState.GRASS)
-    map_mock.set_pair(0,2, PositionState.GRASS)
-    map_mock.set_pair(0,3, PositionState.GRASS)
-    map_mock.set_pair(1,2, PositionState.GRASS)
-    map_mock.set_pair(1,4, PositionState.GRASS)
-    map_mock.set_pair(1,3, PositionState.GRASS)
-    map_mock.set_pair(2,0, PositionState.GRASS)
-    map_mock.set_pair(2,1, PositionState.GRASS)
-    map_mock.set_pair(2,3, PositionState.CHARGER)
+    map_mock.set_pair(0, 1, PositionState.GRASS)
+    map_mock.set_pair(0, 2, PositionState.GRASS)
+    map_mock.set_pair(0, 3, PositionState.GRASS)
+    map_mock.set_pair(1, 2, PositionState.GRASS)
+    map_mock.set_pair(1, 4, PositionState.GRASS)
+    map_mock.set_pair(1, 3, PositionState.GRASS)
+    map_mock.set_pair(2, 0, PositionState.GRASS)
+    map_mock.set_pair(2, 1, PositionState.GRASS)
+    map_mock.set_pair(2, 3, PositionState.CHARGER)
     directions = bfs(start_point, map_mock)
     print(directions)
