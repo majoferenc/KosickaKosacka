@@ -51,10 +51,7 @@ class Model:
             # check if execute queue is empty
             if self.execute_queue.qsize() == 0:
                 # get moves from algorithm, only if no known moves
-                moves_to_execute = lawn_mower.moves_to_exectute(None)
-            
-                for move in moves_to_execute:
-                    self.execute_queue.put(move)
+                self.put_data_array_in_queue(lawn_mower.moves_to_exectute(None))
 
             # get last_move for anti dead move
             self.last_move = self.execute_queue.get()
@@ -79,6 +76,11 @@ class Model:
         else:
             self.power_current -= 1
         # TODO update map
+
+
+    def put_data_array_in_queue(self, array):
+        for data in array:
+            self.execute_queue.put(data)
 
 
     def put_mirrored_last_move_into_queue(self):
