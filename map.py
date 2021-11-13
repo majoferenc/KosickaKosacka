@@ -1,6 +1,6 @@
 from enum import Enum
 
-class PositionState(Enum):
+class PositionState(int, Enum):
     OBSTACLE = 1
     BORDER = 2
     GRASS = 3

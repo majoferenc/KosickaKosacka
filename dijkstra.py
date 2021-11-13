@@ -1,6 +1,7 @@
 import sys
 from point import Point
 from sensor_response import SensorResponse
+from map import PositionState
 
 def dijkstra(start_point: Point, map: [Point, SensorResponse], foundCharger):
     # distance
