@@ -26,7 +26,7 @@ Open Anaconda Powershell Prompt:
     
     python main.py --render_mode --maps Greenland Localhost 'Mapname with spaces' --base_url http://169.51.194.78:31798/
 
-## NN version (Don't run during during Hack@Home finals, WIP)
+## NN version (Don't run during Hack@Home finals, WIP)
 ### Training Mode
 
     python main_dqn.py
