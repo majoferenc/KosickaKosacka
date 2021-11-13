@@ -1,6 +1,6 @@
 import queue
 import numpy as np
-from point import Point
+from Point import Point
 from map import Map
 from map import PositionState
 
@@ -19,11 +19,11 @@ def bfs(start_point: Point, map: Map):
 
     while True:
         point = bfs_queue.empty()
-        if map.getPositionState(point.X, point.Y) == PositionState.GRASS or map.getPositionState(point.X, point.Y) == PositionState.BORDER:
+        if map.get_position_state(point) == PositionState.GRASS or map.get_position_state(point) == PositionState.BORDER:
             continue
         for i in range(8):
             neighbour = Point(start_point.X + arround[i][0], start_point.Y + arround[i][1])
-            if map.get(neighbour) == PositionState.MOWER:
+            if map.is_current_position(neighbour):
                 directions[i] = (neighbour, point)
                 return
             if not passed.get(neighbour):
@@ -37,14 +37,14 @@ def bfs(start_point: Point, map: Map):
 if __name__ == "__main__":
     start_point: Point = Point(0,1)
     map_mock: Map = Map()
-    map_mock.addPair(0,1, PositionState.GRASS)
-    map_mock.addPair(0,2, PositionState.GRASS)
-    map_mock.addPair(0,3, PositionState.GRASS)
-    map_mock.addPair(1,2, PositionState.GRASS)
-    map_mock.addPair(1,4, PositionState.GRASS)
-    map_mock.addPair(1,3, PositionState.GRASS)
-    map_mock.addPair(2,0, PositionState.GRASS)
-    map_mock.addPair(2,1, PositionState.GRASS)
-    map_mock.addPair(2,3, PositionState.CHARGER)
+    map_mock.set_pair(0,1, PositionState.GRASS)
+    map_mock.set_pair(0,2, PositionState.GRASS)
+    map_mock.set_pair(0,3, PositionState.GRASS)
+    map_mock.set_pair(1,2, PositionState.GRASS)
+    map_mock.set_pair(1,4, PositionState.GRASS)
+    map_mock.set_pair(1,3, PositionState.GRASS)
+    map_mock.set_pair(2,0, PositionState.GRASS)
+    map_mock.set_pair(2,1, PositionState.GRASS)
+    map_mock.set_pair(2,3, PositionState.CHARGER)
     directions = bfs(start_point, map_mock)
     print(directions)
