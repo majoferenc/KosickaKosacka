@@ -40,7 +40,7 @@ class Model:
                 for move in moves_to_execute:
                     self.execute_queue.put(move)
             
-            step_response = api.step(self.session_id, self.execute_queue.get(), self.base_url)
+            step_response, response_code = api.step(self.session_id, self.execute_queue.get(), self.base_url)
             self.update_step_data(step_response)
             
             

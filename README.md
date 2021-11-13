@@ -30,15 +30,15 @@ Open Anaconda Powershell Prompt:
     
 ### Run Training Mode with Rendering Mode
 
-    python main_dqn.py --render_mode True
+    python main_dqn.py --render_mode True --maps Greenland Localhost 'Mapname with spaces' --base_url 'http://169.51.194.78:31798/'
 
 ### Run Predict Mode
 
-    python main_dqn.py --predict_mode True
+    python main_dqn.py --predict_mode True --maps Greenland Localhost 'Mapname with spaces' --base_url 'http://169.51.194.78:31798/'
 
 ### Run Predict Mode with Rendering Mode
 
-    python main_dqn.py --predict_mode True --render_mode True
+    python main_dqn.py --predict_mode True --render_mode True --maps Greenland Localhost 'Mapname with spaces' --base_url 'http://169.51.194.78:31798/'
 
 
 ###

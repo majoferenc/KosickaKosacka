@@ -7,37 +7,42 @@ import tensorflow as tf
 import numpy as np
 import os
 import shutil
+import api_util as api
 
-# BASE_URL = "http://169.51.194.78:31798/" 
-BASE_URL = "http://localhost/"
+cli = argparse.ArgumentParser()
+cli.add_argument("--maps", nargs="+", default=["SimpleMap", "Greenland", "Localhost", "PuertoRico", "Oregon", "Safari"],)
+cli.add_argument("--base_url", nargs="+", default=["http://localhost/"])
+cli.add_argument("--render_mode", nargs="+", default=["False"])
+cli.add_argument("--predict_mode", nargs="+", default=["False"])
+args = cli.parse_args()
+
+print("maps: %r" % args.maps)
+print("base_url: %s" % str(args.base_url))
+print("render_mode: %s" % str(args.render_mode))
+print("predict_mode: %s" % str(args.predict_mode))
 
 done = False
 result = {"sensors": None}
 move = None
 VALID_MOVES = ['Forward', 'Backward',  'TurnLeft', 'TurnRight']
 
-# Initiate the parser
-parser = argparse.ArgumentParser()
-parser.add_argument("-rm", "--render_mode", help="enable render mode")
-parser.add_argument("-pm", "--predict_mode", help="enable predict mode")
-# Read arguments from the command line
-args = parser.parse_args()
-
-# Controls rendering of training, set to False for faster training
-RENDER_MODE = False
-
-# Controls if we want load existing NN and start prediction/inference with it
-PREDICT_MODE = False
-
 # Check for --version or -V
-if args.render_mode:
+if args.render_mode[0] == "True":
+    print("Render mode is enabled.")
     RENDER_MODE = True
+else:
+    RENDER_MODE = False
 
-if args.predict_mode:
+if args.predict_mode[0] == "True":
+    print("Predict mode is enabled.")
     PREDICT_MODE = True
+else:
+    PREDICT_MODE = False
 
-# maximum number of episodes
-MAX_EPISODES = 25_000
+time.sleep(10)
+
+# maximum number of episodes for one map
+MAX_EPISODES = 2000
 LR_A = 1e-4  # learning rate for Actor, or simply 0.0001
 LR_C = 1e-4  # learning rate for Critic, or simply 0.0001
 # Actor iteration
@@ -266,162 +271,143 @@ if PREDICT_MODE:
 else:
     sess.run(tf.compat.v1.global_variables_initializer())
 
-def step(sessionid, move):
-    response = requests.get(BASE_URL+"step/", params={"id": sessionid, "move": move})
-    time.sleep(0.005)
-    if response:
-        return response.json(), response.status_code
-    else:
-        return step(sessionid, move)
-
-def initsession():
-    try:
-        response = requests.get(BASE_URL+"init/",  params={"mapName": "PuertoRico"})
-        if response:
-            print(response.json())
-            return response.json(), response.status_code
-        else:
-            return initsession()
-    except:
-        print("Failed creating new session. Trying again...")
-        return initsession()
-
-
 def train():
-    # maximum steps of episode/iteration
-    MAX_EP_STEPS = 500 # is overwriten by environment
-    done = False
-    status_code = 202
-    result = {"sensors": None}
-    backward_step_result =  {"sensors": None}
-    real_step_result =  {"sensors": None}
-    move = None
-    VALID_MOVES = ['Forward', 'Backward',  'TurnLeft', 'TurnRight']
-    random_exploration = 2.  # control exploration
-    for ep in range(MAX_EPISODES):
-        ep_step = 0
+    for map in args.maps:
+        print("map: %s" % map)
+        # maximum steps of episode/iteration
+        MAX_EP_STEPS = 500 # is overwriten by environment
         done = False
-        for t in range(MAX_EP_STEPS):
-            session, status_code = initsession()
-            if status_code > 202:
-                    break
-            MAX_EP_STEPS = session['stepsLimit']
-            print(session["id"])
-            if RENDER_MODE:
-                webbrowser.open(BASE_URL+"visualize/" + session["id"])
-            while not done:
-                print("Episode: " + str(ep))
-                # little logic to not cross border or bump to obstacle
-                validmoves_local=VALID_MOVES
-                if result["sensors"] in ["Obstacle", "Border"]:
-                    if move == "Forward":
-                        validmoves_local=["Backward"]
-                    elif move == "Backward":
-                        validmoves_local=["Forward"]
-                if result["sensors"]:
-                    print("Sensors:" + result["sensors"])
-                    state = get_input_to_dqn_fron_sensors(result["sensors"])
-                else:
-                    state = np.array([3.0])
-                # Added exploration noise
-                actor_state = actor.choose_action(state)
-                actor_state = np.clip(np.random.normal(actor_state, random_exploration), *ACTION_BOUND)  # add randomness
-                # send action of actor to grass cutter env
-                # get state or sensor info, reward value and done varibe
-                move = get_valid_move(actor_state)
-                # Create front sensor data:
-                result, status_code = step(session['id'], 'Forward')
-                
+        status_code = 202
+        result = {"sensors": None}
+        backward_step_result =  {"sensors": None}
+        real_step_result =  {"sensors": None}
+        move = None
+        VALID_MOVES = ['Forward', 'Backward',  'TurnLeft', 'TurnRight']
+        random_exploration = 2.  # control exploration
+        for ep in range(MAX_EPISODES):
+            ep_step = 0
+            done = False
+            for t in range(MAX_EP_STEPS):
+                session, status_code = api.init_session(map, args.base_url[0])
                 if status_code > 202:
-                    ep_step += 1
-                    break
-                
-                if result["sensors"] in ["OutOfBondaries", "Stuck"]:
-                    print("====> Session ended: " + result["sensors"])
-                    if RENDER_MODE:
-                        ep_step += 1
-                        pyautogui.hotkey('ctrl', 'w')
-                    break
-
-                backward_step_result, status_code=step(session['id'], 'Backward')
-                
-                if status_code > 202:
-                    ep_step += 1
-                    break
-                
-                if backward_step_result["sensors"] in ["OutOfBondaries", "Stuck"]:
-                    print("====> Session ended: " + backward_step_result["sensors"])
-                    if RENDER_MODE:
-                        ep_step += 1
-                        pyautogui.hotkey('ctrl', 'w')
-                    break
-
-                if 'done' in result:
-                    done=result['done']
-                if 'done' in backward_step_result:
-                    done=backward_step_result['done']
-
-                real_step_result, status_code = step(session['id'], move)
-
-                if status_code > 202:                
-                    ep_step += 1
-                    break
-
-                if 'done' in real_step_result:
-                    done=real_step_result['done']
-                else:
-                    ep_step += 1
-                    break
-                reward = real_step_result["reward"]
-                # change reward mechanism
-                if real_step_result["reward"] == 0:
-                    reward = -1
-                else:
-                    reward = 0
+                        break
+                MAX_EP_STEPS = session['stepsLimit']
+                print(session["id"])
+                if RENDER_MODE:
+                    webbrowser.open(args.base_url[0]+"visualize/" + session["id"])
+                while not done:
+                    print("Episode: " + str(ep))
+                    # little logic to not cross border or bump to obstacle
+                    validmoves_local=VALID_MOVES
+                    if result["sensors"] in ["Obstacle", "Border"]:
+                        if move == "Forward":
+                            validmoves_local=["Backward"]
+                        elif move == "Backward":
+                            validmoves_local=["Forward"]
+                    if result["sensors"]:
+                        print("Sensors:" + result["sensors"])
+                        state = get_input_to_dqn_fron_sensors(result["sensors"])
+                    else:
+                        state = np.array([3.0])
+                    # Added exploration noise
+                    actor_state = actor.choose_action(state)
+                    actor_state = np.clip(np.random.normal(actor_state, random_exploration), *ACTION_BOUND)  # add randomness
+                    # send action of actor to grass cutter env
+                    # get state or sensor info, reward value and done varibe
+                    move = get_valid_move(actor_state)
+                    # Create front sensor data:
+                    result, status_code = api.step(session['id'], 'Forward', args.base_url[0])
                     
-                state_ = get_input_to_dqn_fron_sensors(result["sensors"])
-                # add move to memory
-                memory_replay_buffer.store_transition(state, actor_state, reward, state_)
+                    if status_code > 202:
+                        ep_step += 1
+                        break
+                    
+                    if result["sensors"] in ["OutOfBondaries", "Stuck"]:
+                        print("====> Session ended: " + result["sensors"])
+                        if RENDER_MODE:
+                            ep_step += 1
+                            pyautogui.hotkey('ctrl', 'w')
+                        break
 
-                # start learning after memory is full
-                if memory_replay_buffer.memory_counter > MEMORY_CAPACITY:
-                    random_exploration = max([random_exploration * .9995, VAR_MIN])  # decay the action randomness
-                    b_M = memory_replay_buffer.sample_buffer(BATCH_SIZE)
-                    b_s = b_M[:, :STATE_DIM]
-                    b_a = b_M[:, STATE_DIM: STATE_DIM + ACTION_DIM]
-                    b_r = b_M[:, -STATE_DIM - 1: -STATE_DIM]
-                    b_s_ = b_M[:, -STATE_DIM:]
+                    backward_step_result, status_code= api.step(session['id'], 'Backward', args.base_url[0])
+                    
+                    if status_code > 202:
+                        ep_step += 1
+                        break
+                    
+                    if backward_step_result["sensors"] in ["OutOfBondaries", "Stuck"]:
+                        print("====> Session ended: " + backward_step_result["sensors"])
+                        if RENDER_MODE:
+                            ep_step += 1
+                            pyautogui.hotkey('ctrl', 'w')
+                        break
 
-                    # trigger Critic learn function
-                    critic.learn(b_s, b_a, b_r, b_s_)
-                    # trigger Actor learn function
-                    actor.learn(b_s)
+                    if 'done' in result:
+                        done=result['done']
+                    if 'done' in backward_step_result:
+                        done=backward_step_result['done']
 
-                state = state_
-                # increment step by one
-                ep_step += 1
-                print(move, result)
+                    real_step_result, status_code = api.step(session['id'], move, args.base_url[0])
 
-                if real_step_result["sensors"] in ["OutOfBondaries", "Stuck"]:
-                    print("====> Session ended: " + real_step_result["sensors"])
+                    if status_code > 202:                
+                        ep_step += 1
+                        break
+
+                    if 'done' in real_step_result:
+                        done=real_step_result['done']
+                    else:
+                        ep_step += 1
+                        break
+                    reward = real_step_result["reward"]
+                    # change reward mechanism
+                    if real_step_result["reward"] == 0:
+                        reward = -1
+                    else:
+                        reward = 0
+                        
+                    state_ = get_input_to_dqn_fron_sensors(result["sensors"])
+                    # add move to memory
+                    memory_replay_buffer.store_transition(state, actor_state, reward, state_)
+
+                    # start learning after memory is full
+                    if memory_replay_buffer.memory_counter > MEMORY_CAPACITY:
+                        random_exploration = max([random_exploration * .9995, VAR_MIN])  # decay the action randomness
+                        b_M = memory_replay_buffer.sample_buffer(BATCH_SIZE)
+                        b_s = b_M[:, :STATE_DIM]
+                        b_a = b_M[:, STATE_DIM: STATE_DIM + ACTION_DIM]
+                        b_r = b_M[:, -STATE_DIM - 1: -STATE_DIM]
+                        b_s_ = b_M[:, -STATE_DIM:]
+
+                        # trigger Critic learn function
+                        critic.learn(b_s, b_a, b_r, b_s_)
+                        # trigger Actor learn function
+                        actor.learn(b_s)
+
+                    state = state_
+                    # increment step by one
                     ep_step += 1
-                    if RENDER_MODE:
-                        pyautogui.hotkey('ctrl', 'w')
-                    break
-                if done is True:
-                    print("====> Session ended: " + real_step_result["sensors"])
-                    ep_step += 1
-                    if RENDER_MODE:
-                        pyautogui.hotkey('ctrl', 'w')
-                    break
+                    print(move, result)
 
-            if done or t == MAX_EP_STEPS - 1 or status_code > 202 or result["sensors"] in ["OutOfBondaries", "Stuck"] or real_step_result["sensors"] in ["OutOfBondaries", "Stuck"] or backward_step_result["sensors"] in ["OutOfBondaries", "Stuck"]:
-                ep_step += 1
-                print('Iteration:', ep,
-                        '| Steps taken: %i' % int(ep_step),
-                        '| Random Exploration: %.2f' % random_exploration
-                        )
-                break
+                    if real_step_result["sensors"] in ["OutOfBondaries", "Stuck"]:
+                        print("====> Session ended: " + real_step_result["sensors"])
+                        ep_step += 1
+                        if RENDER_MODE:
+                            pyautogui.hotkey('ctrl', 'w')
+                        break
+                    if done is True:
+                        print("====> Session ended: " + real_step_result["sensors"])
+                        ep_step += 1
+                        if RENDER_MODE:
+                            pyautogui.hotkey('ctrl', 'w')
+                        break
+
+                if done or t == MAX_EP_STEPS - 1 or status_code > 202 or result["sensors"] in ["OutOfBondaries", "Stuck"] or real_step_result["sensors"] in ["OutOfBondaries", "Stuck"] or backward_step_result["sensors"] in ["OutOfBondaries", "Stuck"]:
+                    ep_step += 1
+                    print('Iteration:', ep,
+                            '| Steps taken: %i' % int(ep_step),
+                            '| Random Exploration: %.2f' % random_exploration
+                            )
+                    break
 
     # Save model for future prediction
     if os.path.isdir(path): shutil.rmtree(path)
@@ -432,57 +418,59 @@ def train():
 
 
 def predict():
-    while True:
-        state = np.array([3.0])
-        done = False
-        result = {"sensors": None}
-        move = None
-        VALID_MOVES = ['Forward', 'Backward',  'TurnLeft', 'TurnRight']
-        session, status_code = initsession()
-        if status_code > 202:
-            break
-        print(session["id"])
-        if RENDER_MODE:
-            webbrowser.open(BASE_URL+"visualize/" + session["id"])
+    for map in args.maps:
+        print("map: %s" % map)
         while True:
-            if result["sensors"]:
-                print("Sensors:" + result["sensors"])
-                state = get_input_to_dqn_fron_sensors(result["sensors"])
-            else:
-                state = np.array([3.0])
-            actor_state = actor.choose_action(state)
-            move = get_valid_move(actor_state)
-            print("Move" + move)
-
-            # Create front sensor data:
-            result, status_code=step(session['id'], 'Forward')
+            state = np.array([3.0])
+            done = False
+            result = {"sensors": None}
+            move = None
+            VALID_MOVES = ['Forward', 'Backward',  'TurnLeft', 'TurnRight']
+            session, status_code =  api.init_session(map, args.base_url[0])
             if status_code > 202:
-                    break
-            backward_step_result, status_code = step(session['id'], 'Backward')
-            if status_code > 202:
-                    break
-            # Do real move
-            real_result, status_code=step(session['id'], move)
-            if status_code > 202:
-                    break
-            done=real_result["done"]
-            # change reward mechanism
-            if result["reward"] == 0:
-                reward = -1
-            else:
-                reward = 0
-            print(move, real_result)
-            state_ = get_input_to_dqn_fron_sensors(result["sensors"])
-            if real_result["sensors"] in ["OutOfBondaries", "Stuck"]:
-                print("Session ended: " + real_result["sensors"])
-                if RENDER_MODE:
-                    pyautogui.hotkey('ctrl', 'w')
                 break
-            state = state_
+            print(session["id"])
+            if RENDER_MODE:
+                webbrowser.open(args.base_url[0]+"visualize/" + session["id"])
+            while True:
+                if result["sensors"]:
+                    print("Sensors:" + result["sensors"])
+                    state = get_input_to_dqn_fron_sensors(result["sensors"])
+                else:
+                    state = np.array([3.0])
+                actor_state = actor.choose_action(state)
+                move = get_valid_move(actor_state)
+                print("Move" + move)
+
+                # Create front sensor data:
+                result, status_code = api.step(session['id'], 'Forward', args.base_url[0])
+                if status_code > 202:
+                        break
+                backward_step_result, status_code = api.step(session['id'], 'Backward', args.base_url[0])
+                if status_code > 202:
+                        break
+                # Do real move
+                real_result, status_code = api.step(session['id'], move, args.base_url[0])
+                if status_code > 202:
+                        break
+                done=real_result["done"]
+                # change reward mechanism
+                if result["reward"] == 0:
+                    reward = -1
+                else:
+                    reward = 0
+                print(move, real_result)
+                state_ = get_input_to_dqn_fron_sensors(result["sensors"])
+                if real_result["sensors"] in ["OutOfBondaries", "Stuck"]:
+                    print("Session ended: " + real_result["sensors"])
+                    if RENDER_MODE:
+                        pyautogui.hotkey('ctrl', 'w')
+                    break
+                state = state_
+                if done:
+                    break
             if done:
                 break
-        if done:
-            break
 
 if PREDICT_MODE:
     predict()

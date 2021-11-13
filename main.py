@@ -12,6 +12,6 @@ print("base_url: %s" % str(args.base_url))
 
 for map in args.maps:
     print("map: %s" % map)
-    init_response = api.init_session(map, args.base_url[0])
+    init_response, response_code = api.init_session(map, args.base_url[0])
     model = Model(init_response, args.base_url[0])
     model.execute()
