@@ -1,5 +1,5 @@
 from enum import Enum
-from Point import Point
+from point import Point
 from sensor_response import SensorResponse
 from supported_move import SupportedMove
 

@@ -2,8 +2,7 @@ import queue
 import logging
 import numpy as np
 from point import Point
-from map import Map
-from map import PositionState
+from map import Map, PositionState
 
 
 # najdenie nabijacky
@@ -64,4 +63,4 @@ if __name__ == "__main__":
     map_mock.set_pair(2, 2, PositionState.CHARGER)
     directions = bfs(start_point, map_mock)
     for direction in directions.items():
-        print(direction)
+        print(direction[0], direction[1])
