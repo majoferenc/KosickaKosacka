@@ -74,7 +74,7 @@ class Model:
         self.charger_distance = step_json["chargerLocation"]["distance"]
         self.charger_direction_offset = step_json["chargerLocation"]["directionOffset"]
         
-        # update energy
+        # update power
         if self.sensor == SensorResponse.CHARGE:
             self.power_current = self.power_max
         else:
