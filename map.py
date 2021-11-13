@@ -9,6 +9,7 @@ class PositionState(int, Enum):
     # None or Cut
     GRASS = 3
     CHARGER = 4
+    MOWER = 5
 
    
 def convert_sensor_response_to_position_state(sensor_response: SensorResponse):

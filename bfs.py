@@ -9,16 +9,15 @@ from map import PositionState
 # najdenie nabijacky
 def bfs(start_point: Point, map: Map):
     bfs_queue = queue.Queue()
-    # v mape "predchodca" sa uklada nasledujuci bod v najkratsej ceste ku stanici
     directions = {}
-    passed = {}
+    passed = []
     bfs_queue.put(start_point)
-    passed[0] = start_point
+    passed.append(start_point)
 
     arround = np.array([[1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1]])
 
-    while True:
-        logging.debug('while')
+    while not bfs_queue.empty():
+        logging.debug('Start of while loop')
         point = bfs_queue.get(timeout=False)
         logging.debug(point)
         logging.debug(map.get_position_state(point))
@@ -28,17 +27,23 @@ def bfs(start_point: Point, map: Map):
             continue
         logging.debug('Starting to calculate directions')
         for i in range(7):
-            logging.debug(str(i) + '. iteraction')
+            logging.debug(str(i) + '. iteration')
             neighbour = Point(start_point.X + arround[i][0], start_point.Y + arround[i][1])
-            logging.debug("Map: " + str(map.is_current_position(neighbour)))
-            if map.is_current_position(neighbour):
+            position_state = map.get_map().get(neighbour, None)
+            logging.debug("Map: " + str(position_state))
+            if position_state is PositionState.MOWER:
                 directions[i] = (neighbour, Point(point.X - neighbour.X, point.Y - neighbour.Y))
-                logging.debug('Adding to directions: ' + str(neighbour) + str(Point(point.X - neighbour.X, point.Y - neighbour.Y)))
+                logging.debug('Adding to directions: ' + str(neighbour) + str(
+                    Point(point.X - neighbour.X, point.Y - neighbour.Y)))
                 break
-            if not passed.get(neighbour):
+            logging.debug('neighbour:' + str(neighbour))
+            logging.debug('passed:' + str(passed))
+            if neighbour not in passed:
+                logging.debug('neighbour not in passed')
                 bfs_queue.put(neighbour)
-                passed[i] = neighbour
+                passed.append(neighbour)
                 directions[i] = (neighbour, point)
+                logging.debug('Adding to directions: ' + str(neighbour) + str(point))
         logging.debug('Directions calculated')
         return directions
 
@@ -48,15 +53,15 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     start_point: Point = Point(0, 1)
     map_mock: Map = Map()
+    map_mock.set_pair(0, 0, PositionState.GRASS)
     map_mock.set_pair(0, 1, PositionState.GRASS)
-    map_mock.set_pair(0, 2, PositionState.GRASS)
-    map_mock.set_pair(0, 3, PositionState.GRASS)
-    map_mock.set_pair(1, 2, PositionState.OBSTACLE)
-    map_mock.set_pair(1, 4, PositionState.GRASS)
-    map_mock.set_pair(1, 3, PositionState.GRASS)
+    map_mock.set_pair(0, 2, PositionState.MOWER)
+    map_mock.set_pair(1, 0, PositionState.OBSTACLE)
+    map_mock.set_pair(1, 1, PositionState.GRASS)
+    map_mock.set_pair(1, 2, PositionState.GRASS)
     map_mock.set_pair(2, 0, PositionState.GRASS)
     map_mock.set_pair(2, 1, PositionState.GRASS)
-    map_mock.set_pair(2, 3, PositionState.CHARGER)
+    map_mock.set_pair(2, 2, PositionState.CHARGER)
     directions = bfs(start_point, map_mock)
     for direction in directions.items():
         print(direction)
