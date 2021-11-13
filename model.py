@@ -4,12 +4,13 @@ from sensor_response import SensorResponse
 from supported_move import SupportedMove
 
 class Model:
-    def __init__(self, init_json):
+    def __init__(self, init_json, base_url):
         # init response data
         self.session_id = init_json["id"]
         self.power_max = init_json["maxEnergy"]
         self.steps_limit = init_json["stepsLimit"]
-        
+        self.base_url = base_url
+
         # step response data
         self.done = False
         self.reward = None
@@ -39,7 +40,7 @@ class Model:
                 for move in moves_to_execute:
                     self.execute_queue.put(move)
             
-            step_response = api.step(self.session_id, self.execute_queue.get())
+            step_response = api.step(self.session_id, self.execute_queue.get(), self.base_url)
             self.update_step_data(step_response)
             
             

@@ -37,7 +37,7 @@ if args.predict_mode:
     PREDICT_MODE = True
 
 # maximum number of episodes
-MAX_EPISODES = 100_000
+MAX_EPISODES = 25_000
 LR_A = 1e-4  # learning rate for Actor, or simply 0.0001
 LR_C = 1e-4  # learning rate for Critic, or simply 0.0001
 # Actor iteration
