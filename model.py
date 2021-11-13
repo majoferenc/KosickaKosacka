@@ -2,6 +2,7 @@ import queue
 import api_util as api
 from sensor_response import SensorResponse
 from supported_move import SupportedMove
+from map import Map, convert_sensor_response_to_position_state
 import webbrowser, pyautogui
 import lawn_mower as lawn_mower
 
@@ -27,6 +28,9 @@ class Model:
         self.last_move = None
         # FIFO Queue
         self.execute_queue = queue.Queue()
+        self.map_n = Map([0,1])
+        self.map_ne = Map([1,1])
+        self.map_real = self.map_n
         
     def execute(self):
         if self.render_mode is True:
@@ -49,7 +53,7 @@ class Model:
             # check if execute queue is empty
             if self.execute_queue.qsize() == 0:
                 # get moves from algorithm, only if no known moves
-                self.put_data_array_in_queue(lawn_mower.moves_to_exectute(None))
+                self.put_data_array_in_queue(lawn_mower.moves_to_exectute(self.map_real))
 
             # get last_move for anti dead move
             self.last_move = self.execute_queue.get()
@@ -69,11 +73,17 @@ class Model:
         self.sensor = step_json["sensors"]
         self.charger_distance = step_json["chargerLocation"]["distance"]
         self.charger_direction_offset = step_json["chargerLocation"]["directionOffset"]
+        
+        # update energy
         if self.sensor == SensorResponse.CHARGE:
             self.power_current = self.power_max
         else:
             self.power_current -= 1
-        # TODO update map
+        
+        # update map
+        position_state = convert_sensor_response_to_position_state(self.sensor)
+        self.map_n.update_position_from_move(self.last_move, position_state)
+        self.map_ne.update_position_from_move(self.last_move, position_state)
 
 
     def put_data_array_in_queue(self, array):
