@@ -2,6 +2,7 @@ from enum import Enum
 from point import Point
 from sensor_response import SensorResponse
 from supported_move import SupportedMove
+import math 
 
 class PositionState(int, Enum):
     OBSTACLE = 1
@@ -43,6 +44,7 @@ class Map:
         self.charger = None
         self.position = Point(0,0)
         self.direction = [0, 1]
+        self.charger_confirmed = False
 
     def update_position(self, direction, position_state: PositionState):
         self.position = Point(self.position.X + direction[0], self.position.Y + direction[1])
@@ -91,6 +93,7 @@ class Map:
         return self.charger
 
     def set_charger_position(self, charger):
+        self.charger_confirmed = True
         self.charger = charger
 
     def get_current_direction(self):
@@ -104,3 +107,61 @@ class Map:
 
     def is_current_position(self, coords):
         return coords == self.position 
+
+    def find_charger(self, direction_offset, distance):
+        if self.charger_confirmed:
+            return self.charger
+
+        x = self.position.X
+        y = self.position.Y
+
+
+        if direction_offset == 0:
+            self.set_charger_position(Point(x, y + distance))
+        
+        if direction_offset == 90:
+            self.set_charger_position(Point(x - distance, y))
+
+        if abs(direction_offset) == 180:
+            self.set_charger_position(Point(x, y - distance))
+
+        if direction_offset == -90:
+            self.set_charger_position(Point(x + distance, y))
+
+        if self.charger_confirmed:
+            return self.charger
+        
+        delta = distance / math.sqrt(2)
+        if direction_offset == 45:
+            return Point(x - delta, y + delta)
+        
+        if direction_offset == 135:
+            return Point(x - delta, y - delta)
+
+        if direction_offset == -45:
+            return Point(x + delta, y + delta)
+
+        if direction_offset == -135:
+            return Point(x + delta, y - delta)
+
+
+        my_direction = abs(direction_offset)
+        was_big = False
+        if my_direction > 90:
+            my_direction -= 90
+            was_big = True
+        
+        cos = math.cos(my_direction) * distance
+        sin = math.sin(my_direction) * distance
+
+        if was_big:
+            delta_x = cos
+            delta_y = -sin
+        else: 
+            delta_x = sin
+            delta_y = cos
+        
+        if direction_offset > 0:
+            delta_x = -delta_x
+        
+        return Point(x + delta_x, y + delta_y)
