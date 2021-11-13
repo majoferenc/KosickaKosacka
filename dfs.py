@@ -1,4 +1,4 @@
-from Point import Point
+from point import Point
 from sensor_response import SensorResponse
 from map import PositionState
 from map import Map
