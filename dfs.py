@@ -10,6 +10,7 @@ VALID_MOVES = ['Forward', 'Backward', 'TurnLeft', 'TurnRight']
 
 path = []
 
+# return position of unknown point, will not do backtracking, this will be done in model
 
 def reverse_step():
     move = path.pop()
