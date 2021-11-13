@@ -47,7 +47,8 @@ class Model:
             self.update_step_data(step_response)
         if self.render_mode == "True":
             # Closing browser tab
-            pyautogui.hotkey('ctrl', 'w')
+            pass
+            # pyautogui.hotkey('ctrl', 'w')
             
             
     def update_step_data(self, step_json):
