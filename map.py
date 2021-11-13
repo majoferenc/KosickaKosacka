@@ -1,6 +1,7 @@
 from enum import Enum
 from Point import Point
 from sensor_response import SensorResponse
+from supported_move import SupportedMove
 
 class PositionState(int, Enum):
     OBSTACLE = 1
@@ -14,15 +15,14 @@ class Map:
         self.map = {}
         self.charger = None
         self.position = Point(0,0)
-        self.direction = [0, 0]
+        self.direction = [0, 1]
 
     def update_position(self, direction, position_state: PositionState):
-        self.position.X += direction[0]
-        self.position.Y += direction[1]
+        self.position = Point(self.position.X + direction[0], self.position.Y + direction[1])
 
-        self.direction = [direction[0], direction[1]]
+        self.set_direction(direction)
 
-        self.map[Point(self.position.X, self.position.X)] = position_state
+        self.map[self.position] = position_state
 
         if (position_state is PositionState.CHARGER):
             self.set_charger_position(Point(self.position.X, self.position.Y))
@@ -39,11 +39,27 @@ class Map:
         }
         return self.update_position(self, direction, switcher.get(sensor_response, PositionState.NONE))
 
+    def update_position_from_move(self, move: SupportedMove, position_state: PositionState):
+        # the mower did not move, it just rotated
+        if move == SupportedMove.TURN_LEFT or move == SupportedMove.TURN_RIGHT: 
+            self.set_direction(self.convert_move_to_direction(move))
+        elif move == SupportedMove.FORWARD:
+            self.update_position(self.direction, position_state)
+        elif move == SupportedMove.BACKWARD:
+            # move into the oposite direction
+            original_direction = self.direction
+            self.update_position([-original_direction[0], -original_direction[1]], position_state)
+            # revert the changes on the mower's direction
+            self.set_direction(original_direction)
+
     """ directly modify the map, should be used only for mocking """
     def set_pair(self, x, y, position_state):
         self.map[Point(x,y)] = position_state
         if (position_state is PositionState.CHARGER):
             self.set_charger_position(Point(x, y))
+
+    def set_direction(self, direction):
+        self.direction = [direction[0], direction[1]]
 
     def get_map(self):
         return self.map
@@ -63,6 +79,22 @@ class Map:
     def get_current_position(self):
         return self.position
 
+    def get_current_position_state(self):
+        return self.map[self.position]
+
     def is_current_position(self, coords):
         return coords == self.position
+
+    def convert_move_to_direction(self, move: SupportedMove):
+        around = [[1,1], [1,0], [1,-1], [0,-1], [-1,-1], [-1,0], [-1,1], [0,1]]
+        index = around.index(self.direction)
+        if move == SupportedMove.TURN_RIGHT:
+            index += 1
+            if index >= len(around):
+                index = 0
+        elif move == SupportedMove.TURN_LEFT:
+            index -= 1
+            if index < 0: 
+                index = len(around) - 1 
+        return around[index]
     
