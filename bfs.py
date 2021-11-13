@@ -1,11 +1,14 @@
 import queue
+import logging
 import numpy as np
 from point import Point
 from map import Map
 from map import PositionState
 
+logging.basicConfig(level=logging.DEBUG)
 
-# najdenie nabojacky
+
+# najdenie nabijacky
 def bfs(start_point: Point, map: Map):
     bfs_queue = queue.Queue()
     # v mape "predchodca" sa uklada nasledujuci bod v najkratsej ceste ku stanici
@@ -18,19 +21,27 @@ def bfs(start_point: Point, map: Map):
     arround = np.array([[1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1]])
 
     while True:
-        point = bfs_queue.empty()
-        if map.getPositionState(point.X, point.Y) == PositionState.GRASS or map.getPositionState(point.X, point.Y) == PositionState.BORDER:
+        logging.debug('while')
+        point = bfs_queue.get()
+        logging.debug(point)
+        logging.debug(map.getPositionState(point.X, point.Y))
+        if map.getPositionState(point.X, point.Y) == PositionState.GRASS or \
+                map.getPositionState(point.X, point.Y) == PositionState.BORDER:
+            logging.debug('continue')
             continue
-        for i in range(8):
+        logging.debug('after if')
+        for i in range(7):
+            logging.debug('range')
             neighbour = Point(start_point.X + arround[i][0], start_point.Y + arround[i][1])
-            if map.get(neighbour) == PositionState.MOWER:
+            if map.getPositionState(neighbour.X, neighbour.Y) == PositionState.CHARGER:
                 directions[i] = (neighbour, point)
                 return
             if not passed.get(neighbour):
                 bfs_queue.put(neighbour)
                 passed[i] = neighbour
                 predchodca[i] = neighbour, point
-    return directions
+        logging.debug('after range')
+        return directions
 
 
 # Testing BFS
