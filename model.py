@@ -31,14 +31,6 @@ class Model:
         if self.render_mode is True:
             webbrowser.open(self.base_url+"visualize/" + self.session_id)
         while not self.done:
-            # TODO check if lawner has enough energy with dijkstra algo
-            need_go_to_charger = False
-            
-            if need_go_to_charger:
-                # TODO go to charger, steps from dijkstra
-                self.execute_queue = queue.Queue()
-                # self.execute_queue = # get new queue data
-
             # check if not standing on obstacle or border
             # anti dead mode
             if self.sensor == SensorResponse.OBSTACLE or self.sensor == SensorResponse.BORDER:
@@ -47,6 +39,14 @@ class Model:
                 
                 # execute SupportedMove.FORWARD or SupportedMove.BACKWARD
                 self.put_mirrored_last_move_into_queue()
+            else:
+                # TODO check if lawner has enough energy with dijkstra algo
+                need_go_to_charger, moves_to_charger = False
+                
+                if need_go_to_charger:
+                    # TODO go to charger, steps from dijkstra
+                    self.execute_queue = queue.Queue()
+                    # self.execute_queue = # get new queue data
 
             # check if execute queue is empty
             if self.execute_queue.qsize() == 0:
