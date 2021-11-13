@@ -26,7 +26,7 @@ class Model:
         
     def execute(self):
         if self.render_mode == "True":
-            webbrowser.open(args.base_url[0]+"visualize/" + self.session_id)
+            webbrowser.open(self.base_url+"visualize/" + self.session_id)
         while not self.done:
             # check if not standing on obstacle or border
             if self.sensor is SensorResponse.OBSTACLE or self.sensor is SensorResponse.BORDER:
