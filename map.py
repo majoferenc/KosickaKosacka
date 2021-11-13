@@ -63,9 +63,6 @@ class Map:
     def get_current_position(self):
         return self.position
 
-    def get_lawn_mower(self):
-        return 
-
     def is_current_position(self, coords):
         return coords == self.position
     
