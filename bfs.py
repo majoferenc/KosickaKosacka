@@ -15,6 +15,7 @@ def bfs(start_point: Point, map: [Point, SensorResponse]):
     passed[0] = start_point
 
     arround = np.array([[1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1]])
+
     while True:
         point = bfs_queue.empty()
         if map[point] == SensorResponse.CUT or map[point] == SensorResponse.BORDER:
@@ -28,5 +29,12 @@ def bfs(start_point: Point, map: [Point, SensorResponse]):
                 bfs_queue.put(neighbour)
                 passed[i] = neighbour
                 predchodca[i] = neighbour, point
-
+    return directions
     # TODO return directions
+
+
+# Testing BFS
+if __name__ == "__main__":
+    start_point: Point = Point(0,1)
+    map: [Point, SensorResponse] = [[Point(0,1), SensorResponse.NONE], [Point(0,2), SensorResponse.BORDER]]
+    bfs(start_point, map)
