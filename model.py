@@ -33,10 +33,7 @@ class Model:
         while not self.done:
             # check if not standing on obstacle or border
             # anti dead mode
-            if self.sensor == SensorResponse.OBSTACLE or self.sensor == SensorResponse.BORDER:
-                # reset execute_queue 
-                self.execute_queue = queue.Queue()
-                
+            if self.sensor == SensorResponse.OBSTACLE or self.sensor == SensorResponse.BORDER:    
                 # execute SupportedMove.FORWARD or SupportedMove.BACKWARD
                 self.put_mirrored_last_move_into_queue()
             else:
@@ -45,7 +42,6 @@ class Model:
                 
                 if need_go_to_charger:
                     # TODO go to charger, steps from dijkstra
-                    self.execute_queue = queue.Queue()
                     # self.execute_queue = # get new queue data
 
             # check if execute queue is empty
@@ -79,11 +75,13 @@ class Model:
 
 
     def put_data_array_in_queue(self, array):
+        self.execute_queue = queue.Queue()
         for data in array:
             self.execute_queue.put(data)
 
 
     def put_mirrored_last_move_into_queue(self):
+        self.execute_queue = queue.Queue()
         if self.last_move is SupportedMove.FORWARD:
             self.execute_queue.put(SupportedMove.BACKWARD)
         elif self.last_move is SupportedMove.BACKWARD:
