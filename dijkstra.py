@@ -1,7 +1,12 @@
+import sys
+from point import Point
+from sensor_response import SensorResponse
 
-def dijkstra(start_point: Point, map: Dict[Point, str], foundCharger):
+def dijkstra(start_point: Point, map: [Point, SensorResponse], foundCharger):
+    # distance
     done = {}
     not_done = {}
+    # minimal directions to charger
     directions = {}
     done[start_point] = 0
 
@@ -29,7 +34,7 @@ def dijkstra(start_point: Point, map: Dict[Point, str], foundCharger):
         for a in arround:
             neighbour = Point(start_point.X + a[0], start_point.Y + a[1])
             if neighbour in not_done:
-                if map[neighbour] != "grass":
+                if map[neighbour] != SensorResponse.NONE or map[neighbour] != SensorResponse.CUT:
                     not_done.pop(neighbour)
                     continue
                 turn_distance = abs(directions[minPoint].X + a[0]) + abs(directions[minPoint].Y + a[1])

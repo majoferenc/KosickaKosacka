@@ -82,9 +82,8 @@ def dfs():
         print(move, result)
 
 
-sessionid = '7985651476361'  # initsession()['id']
+# sessionid = '7985651476361'  # initsession()['id']
 
-input("Visualization: " + BASE_URL + "visualize/" +
-      sessionid + "\nPress Enter to continue...")
+# input("Visualization: " + BASE_URL + "visualize/" +
+#       sessionid + "\nPress Enter to continue...")
 
-dfs()
