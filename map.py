@@ -64,7 +64,7 @@ class Map:
         elif move == SupportedMove.FORWARD:
             self.update_position(self.direction, position_state)
         elif move == SupportedMove.BACKWARD:
-            # move into the oposite direction
+            # move into the opposite direction
             original_direction = self.direction
             self.update_position([-original_direction[0], -original_direction[1]], position_state)
             # revert the changes on the mower's direction
@@ -73,7 +73,7 @@ class Map:
     """ directly modify the map, should be used only for mocking """
     def set_pair(self, x, y, position_state):
         self.map[Point(x,y)] = position_state
-        if (position_state is PositionState.CHARGER):
+        if (position_state == PositionState.CHARGER):
             self.set_charger_position(Point(x, y))
 
     def set_direction(self, direction):
