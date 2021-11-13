@@ -1,5 +1,5 @@
 from enum import Enum
-from point import Point
+from Point import Point
 from sensor_response import SensorResponse
 from supported_move import SupportedMove
 
@@ -9,6 +9,32 @@ class PositionState(int, Enum):
     # None or Cut
     GRASS = 3
     CHARGER = 4
+
+   
+def convert_sensor_response_to_position_state(sensor_response: SensorResponse):
+    switcher = {
+        SensorResponse.NONE:  PositionState.GRASS,
+        SensorResponse.OBSTACLE: PositionState.Obstacle,
+        SensorResponse.BORDER: PositionState.BORDER,
+        SensorResponse.CUT: PositionState.GRASS, 
+        SensorResponse.OUT_OF_BOUNDARIES: PositionState.NONE,
+        SensorResponse.STUCK: PositionState.NONE,
+        SensorResponse.CHARGE: PositionState.CHARGER
+    }
+    return switcher.get(sensor_response, PositionState.NONE)
+
+def convert_move_to_direction(direction, move: SupportedMove):
+    around = [[1,1], [1,0], [1,-1], [0,-1], [-1,-1], [-1,0], [-1,1], [0,1]]
+    index = around.index(direction)
+    if move == SupportedMove.TURN_RIGHT:
+        index += 1
+        if index >= len(around):
+            index = 0
+    elif move == SupportedMove.TURN_LEFT:
+        index -= 1
+        if index < 0: 
+            index = len(around) - 1 
+    return around[index]
 
 class Map:
     def __init__(self):
@@ -28,21 +54,12 @@ class Map:
             self.set_charger_position(Point(self.position.X, self.position.Y))
 
     def update_position_from_sensor(self, direction, sensor_response: SensorResponse):
-        switcher = {
-            SensorResponse.NONE:  PositionState.GRASS,
-            SensorResponse.OBSTACLE: PositionState.Obstacle,
-            SensorResponse.BORDER: PositionState.BORDER,
-            SensorResponse.CUT: PositionState.GRASS, 
-            SensorResponse.OUT_OF_BOUNDARIES: PositionState.NONE,
-            SensorResponse.STUCK: PositionState.NONE,
-            SensorResponse.CHARGE: PositionState.CHARGER
-        }
-        return self.update_position(self, direction, switcher.get(sensor_response, PositionState.NONE))
+        return self.update_position(self, direction, convert_sensor_response_to_position_state(sensor_response))
 
     def update_position_from_move(self, move: SupportedMove, position_state: PositionState):
         # the mower did not move, it just rotated
         if move == SupportedMove.TURN_LEFT or move == SupportedMove.TURN_RIGHT: 
-            self.set_direction(self.convert_move_to_direction(move))
+            self.set_direction(convert_move_to_direction(self.direction, move))
         elif move == SupportedMove.FORWARD:
             self.update_position(self.direction, position_state)
         elif move == SupportedMove.BACKWARD:
@@ -85,16 +102,5 @@ class Map:
     def is_current_position(self, coords):
         return coords == self.position
 
-    def convert_move_to_direction(self, move: SupportedMove):
-        around = [[1,1], [1,0], [1,-1], [0,-1], [-1,-1], [-1,0], [-1,1], [0,1]]
-        index = around.index(self.direction)
-        if move == SupportedMove.TURN_RIGHT:
-            index += 1
-            if index >= len(around):
-                index = 0
-        elif move == SupportedMove.TURN_LEFT:
-            index -= 1
-            if index < 0: 
-                index = len(around) - 1 
-        return around[index]
+   
     
