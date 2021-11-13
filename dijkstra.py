@@ -2,13 +2,12 @@ import sys
 from point import Point
 from sensor_response import SensorResponse
 
-def dijkstra(start_point: Point, map: [Point, SensorResponse], foundCharger):
-    # distance
+def dijkstra(destination_point: Point, map: [Point, SensorResponse]):
     done = {}
     not_done = {}
     # minimal directions to charger
     directions = {}
-    done[start_point] = 0
+    done[destination_point] = 0
 
     for p in map.keys():
         not_done[p] = sys.maxsize
@@ -16,7 +15,7 @@ def dijkstra(start_point: Point, map: [Point, SensorResponse], foundCharger):
     arround = np.array([[1,1], [1,0], [1,-1], [0,-1], [-1,-1], [-1,0], [-1,1], [0,1]])
 
     for a in arround:
-        neighbour = Point(start_point.X + a[0], start_point.Y+ a[1]);
+        neighbour = Point(destination_point.X + a[0], destination_point.Y + a[1]);
         not_done.pop(neighbour);
         done[neighbour] = 1;
         directions[neighbour] = Point(-a[0],-a[1])
@@ -32,7 +31,7 @@ def dijkstra(start_point: Point, map: [Point, SensorResponse], foundCharger):
         not_done.pop(minPoint)
 
         for a in arround:
-            neighbour = Point(start_point.X + a[0], start_point.Y + a[1])
+            neighbour = Point(destination_point.X + a[0], destination_point.Y + a[1])
             if neighbour in not_done:
                 if map[neighbour] != SensorResponse.NONE or map[neighbour] != SensorResponse.CUT:
                     not_done.pop(neighbour)
@@ -43,4 +42,6 @@ def dijkstra(start_point: Point, map: [Point, SensorResponse], foundCharger):
                 if not_done[minPoint] > done[minPoint] + turn_distance + 1:
                     not_done[minPoint] = done[minPoint] + turn_distance +1;
                     directions[minPoint] = Point(-a[0],-a[1])
+
+    return directions
 
