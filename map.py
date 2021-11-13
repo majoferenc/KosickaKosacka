@@ -16,14 +16,14 @@ class PositionState(int, Enum):
 def convert_sensor_response_to_position_state(sensor_response: SensorResponse):
     switcher = {
         SensorResponse.NONE:  PositionState.GRASS,
-        SensorResponse.OBSTACLE: PositionState.Obstacle,
+        SensorResponse.OBSTACLE: PositionState.OBSTACLE,
         SensorResponse.BORDER: PositionState.BORDER,
         SensorResponse.CUT: PositionState.GRASS, 
-        SensorResponse.OUT_OF_BOUNDARIES: PositionState.NONE,
-        SensorResponse.STUCK: PositionState.NONE,
+        SensorResponse.OUT_OF_BOUNDARIES: None,
+        SensorResponse.STUCK: None,
         SensorResponse.CHARGE: PositionState.CHARGER
     }
-    return switcher.get(sensor_response, PositionState.NONE)
+    return switcher.get(sensor_response, None)
 
 def convert_move_to_direction(direction, move: SupportedMove):
     around = [[1,1], [1,0], [1,-1], [0,-1], [-1,-1], [-1,0], [-1,1], [0,1]]
@@ -71,6 +71,9 @@ class Map:
             self.update_position([-original_direction[0], -original_direction[1]], position_state)
             # revert the changes on the mower's direction
             self.set_direction(original_direction)
+
+    def update_position_from_move_and_sensor(self, move: SupportedMove, sensor_response: SensorResponse):
+        return self.update_position_from_move(move, convert_sensor_response_to_position_state(sensor_response))
 
     """ directly modify the map, should be used only for mocking """
     def set_pair(self, x, y, position_state):
