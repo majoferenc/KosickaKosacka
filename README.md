@@ -22,6 +22,10 @@ Open Anaconda Powershell Prompt:
     
     python main.py --maps Greenland Localhost 'Mapname with spaces' --base_url 'http://169.51.194.78:31798/'
 
+## Run algo version with Rendering Mode
+    
+    python main.py --render_mode True --maps Greenland Localhost 'Mapname with spaces' --base_url 'http://169.51.194.78:31798/'
+
 
 ## Run NN verision
 ### Run Training Mode

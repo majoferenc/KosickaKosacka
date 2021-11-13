@@ -2,14 +2,16 @@ import queue
 import api_util as api
 from sensor_response import SensorResponse
 from supported_move import SupportedMove
+import webbrowser, pyautogui
 
 class Model:
-    def __init__(self, init_json, base_url):
+    def __init__(self, init_json, base_url, render_mode):
         # init response data
         self.session_id = init_json["id"]
         self.power_max = init_json["maxEnergy"]
         self.steps_limit = init_json["stepsLimit"]
         self.base_url = base_url
+        self.render_mode = render_mode
 
         # step response data
         self.done = False
@@ -23,6 +25,8 @@ class Model:
         self.execute_queue = queue.Queue()
         
     def execute(self):
+        if self.render_mode == "True":
+            webbrowser.open(args.base_url[0]+"visualize/" + session["id"])
         while not self.done:
             # check if not standing on obstacle or border
             if self.sensor is SensorResponse.OBSTACLE or self.sensor is SensorResponse.BORDER:
@@ -39,9 +43,11 @@ class Model:
             
                 for move in moves_to_execute:
                     self.execute_queue.put(move)
-            
             step_response, response_code = api.step(self.session_id, self.execute_queue.get(), self.base_url)
             self.update_step_data(step_response)
+        if self.render_mode == "True":
+            # Closing browser tab
+            pyautogui.hotkey('ctrl', 'w')
             
             
     def update_step_data(self, step_json):
