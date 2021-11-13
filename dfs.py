@@ -6,15 +6,13 @@ from map import Map
 
 
 def dfs():
-    pos = Map.getMyPosition()
-    for i in [(0,1), (1,1), (1,0), (1,-1), (0,-1), (-1,-1), (-1,0), (-1,1)]:
-
-
-        # TODO: checks if move is valid
-        step = (pos.x + i[0], pos.y + i[1])
-        if (step not in ["Obstacle", "Border", "Cut"]): # Nemoze to byt ani nabijacka
+    map = Map.get_map()
+    pos = map.get_current_position()
+    for i in [(0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1), (-1, 0), (-1, 1)]:
+        step = Point(pos.X + i[0], pos.Y + i[1])
+        # Pozicia este nebola preskumana
+        if map.get_position_state(step) is None:
             return step
-        # TODO: checks if move is valid
 
     return None
 
