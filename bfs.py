@@ -29,8 +29,9 @@ def bfs(start_point: Point, map: Map):
         for i in range(7):
             logging.debug(str(i) + '. iteration')
             neighbour = Point(start_point.X + arround[i][0], start_point.Y + arround[i][1])
-            logging.debug("Map: " + str(map.is_current_position(neighbour)))
-            if map.is_current_position(neighbour):
+            position_state = map.get_map().get(neighbour, None)
+            logging.debug("Map: " + str(position_state))
+            if position_state is PositionState.MOWER:
                 directions[i] = (neighbour, Point(point.X - neighbour.X, point.Y - neighbour.Y))
                 logging.debug('Adding to directions: ' + str(neighbour) + str(
                     Point(point.X - neighbour.X, point.Y - neighbour.Y)))
@@ -54,7 +55,7 @@ if __name__ == "__main__":
     map_mock: Map = Map()
     map_mock.set_pair(0, 0, PositionState.GRASS)
     map_mock.set_pair(0, 1, PositionState.GRASS)
-    map_mock.set_pair(0, 2, PositionState.GRASS)
+    map_mock.set_pair(0, 2, PositionState.MOWER)
     map_mock.set_pair(1, 0, PositionState.OBSTACLE)
     map_mock.set_pair(1, 1, PositionState.GRASS)
     map_mock.set_pair(1, 2, PositionState.GRASS)
