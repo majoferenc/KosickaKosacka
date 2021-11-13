@@ -3,9 +3,9 @@ import api_util as api
 from model import Model
 
 cli = argparse.ArgumentParser()
-cli.add_argument("--maps", nargs="+", default=[],)
-cli.add_argument("--base_url", nargs="?", type=str, default="http://localhost/")
-cli.add_argument("--render_mode", nargs="?", type=bool, default=False)
+cli.add_argument("-m", "--maps", nargs="+", default=[],)
+cli.add_argument("-b", "--base_url", nargs="?", type=str, default="http://localhost/")
+cli.add_argument("-r", "--render_mode", action='store_true')
 args = cli.parse_args()
 
 print("maps: %r" % args.maps)
