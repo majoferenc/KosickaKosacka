@@ -4,7 +4,6 @@ from sensor_response import SensorResponse
 from supported_move import SupportedMove
 
 class PositionState(int, Enum):
-    NONE = 0
     OBSTACLE = 1
     BORDER = 2
     # None or Cut
@@ -86,7 +85,7 @@ class Map:
     def get_position_state(self, coords: Point):
         if coords in self.map:
             return self.map[coords]
-        return PositionState.NONE
+        return None
 
     def get_charger_position(self):
         return self.charger
