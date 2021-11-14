@@ -13,7 +13,7 @@ def dijkstra(destination_point: Point, map: Map):
     # minimal directions to charger
     directions = {}
     done[destination_point] = 0
-    directions[destination_point] = [0, 0]
+    # directions[destination_point] = Point(0, 0)
 
     for p in map.get_map():
         not_done[p] = sys.maxsize
@@ -26,7 +26,7 @@ def dijkstra(destination_point: Point, map: Map):
                 (map.get_map().get(neighbour, None) == PositionState.GRASS or \
                 map.get_map().get(neighbour, None) == PositionState.CHARGER):
             not_done[neighbour] = 1
-            directions[neighbour] = [-a[0], -a[1]]
+            directions[neighbour] = Point(-a[0], -a[1])
 
     while bool(not_done):
 
@@ -53,13 +53,13 @@ def dijkstra(destination_point: Point, map: Map):
                 if map.get_map().get(neighbour, None) != PositionState.GRASS and map.get_map().get(neighbour, None) != PositionState.CHARGER:
                     not_done.pop(neighbour, None)
                     continue
-                turn_distance = abs(directions[minPoint][0] + a[0]) + abs(directions[minPoint][1] + a[1])
+                turn_distance = abs(directions[minPoint].X + a[0]) + abs(directions[minPoint].Y + a[1])
                 if turn_distance == 2 and (
-                        (directions[minPoint][0] == 0 and a[0] == 0) or (directions[minPoint][1] == 0 and a[1] == 0)):
+                        (directions[minPoint].X == 0 and a[0] == 0) or (directions[minPoint].Y == 0 and a[1] == 0)):
                     turn_distance = 4
                 if not_done.get(neighbour) > done.get(minPoint) + turn_distance + 1:
                     not_done[neighbour] = done[minPoint] + turn_distance + 1
-                    directions[neighbour] = [-a[0], -a[1]]
+                    directions[neighbour] = Point(-a[0], -a[1])
 
     return directions
 
@@ -70,7 +70,8 @@ def dijkstra_to_unexplored_point(destination_point: Point, map: Map):
     # minimal directions to charger
     directions = {}
     done[destination_point] = 0
-    directions[destination_point] = [0, 0]
+    # directions[destination_point] = Point(0, 0)
+
     for p in map.get_map():
         not_done[p] = sys.maxsize
     not_done.pop(destination_point, None)
@@ -81,7 +82,7 @@ def dijkstra_to_unexplored_point(destination_point: Point, map: Map):
                 (map.get_map().get(neighbour, None) == PositionState.GRASS or \
                  map.get_map().get(neighbour, None) == PositionState.CHARGER):
             not_done[neighbour] = 1
-            directions[neighbour] = [-a[0], -a[1]]
+            directions[neighbour] = Point(-a[0], -a[1])
     while bool(not_done):
         # for nd in not_done.items():
         #     logging.debug(nd[0], nd[1])
@@ -108,13 +109,13 @@ def dijkstra_to_unexplored_point(destination_point: Point, map: Map):
                                                                                                    None) != PositionState.CHARGER:
                     not_done.pop(neighbour, None)
                     continue
-                turn_distance = abs(directions[minPoint][0] + a[0]) + abs(directions[minPoint][1] + a[1])
+                turn_distance = abs(directions[minPoint].X + a[0]) + abs(directions[minPoint].Y + a[1])
                 if turn_distance == 2 and (
-                        (directions[minPoint][0] == 0 and a[0] == 0) or (directions[minPoint][1] == 0 and a[1] == 0)):
+                        (directions[minPoint].X == 0 and a[0] == 0) or (directions[minPoint].Y == 0 and a[1] == 0)):
                     turn_distance = 4
                 if not_done.get(neighbour) > done.get(minPoint) + turn_distance + 1:
                     not_done[neighbour] = done[minPoint] + turn_distance + 1
-                    directions[neighbour] = [-a[0], -a[1]]
+                    directions[neighbour] = Point(-a[0], -a[1])
 
 
 # Testing BFS

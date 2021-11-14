@@ -11,7 +11,7 @@ def dfs(map):
         step = Point(pos.X + i[0], pos.Y + i[1])
         # Pozicia este nebola preskumana
         if map.get_position_state(step) is None:
-            return step, i
+            return [Point(i[0], i[1])], step
 
-    return None
+    return None, None
 

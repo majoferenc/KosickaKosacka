@@ -5,6 +5,7 @@ from supported_move import SupportedMove
 from map import Map, convert_sensor_response_to_position_state
 import webbrowser, pyautogui
 import lawn_mower as lawn_mower
+from map import PositionState
 
 
 class Model:
@@ -28,13 +29,19 @@ class Model:
         self.last_move = None
         # FIFO Queue
         self.execute_queue = queue.Queue()
-        self.map_n = Map([0,1])
-        self.map_ne = Map([1,1])
+        self.map_n = Map([0, 1])
+        self.map_ne = Map([1, 1])
         self.map_real = self.map_n
-        
+
+        self.map_real.set_pair(0, 0, PositionState.GRASS)
     def execute(self):
         if self.render_mode is True:
             webbrowser.open(self.base_url+"visualize/" + self.session_id)
+        if self.charger_distance is None:
+            self.last_move = SupportedMove.FORWARD
+            step_response, response_code = api.step(self.session_id, self.last_move, self.base_url)
+            self.update_step_data(step_response)
+        approx_charger_point = self.map_real.find_charger(self.charger_direction_offset, self.charger_distance)
         while not self.done:
             # check if not standing on obstacle or border
             # anti dead mode
@@ -43,7 +50,8 @@ class Model:
                 self.put_mirrored_last_move_into_queue()
             else:
                 # TODO check if lawner has enough energy with dijkstra algo
-                need_go_to_charger, moves_to_charger = False
+                need_go_to_charger = False
+                moves_to_charger = False
                 
                 if need_go_to_charger:
                     pass
@@ -53,7 +61,7 @@ class Model:
             # check if execute queue is empty
             if self.execute_queue.qsize() == 0:
                 # get moves from algorithm, only if no known moves
-                self.put_data_array_in_queue(lawn_mower.moves_to_exectute(self.map_real))
+                self.put_data_array_in_queue(lawn_mower.moves_to_exectute(self.map_real, approx_charger_point))
 
             # get last_move for anti dead move
             self.last_move = self.execute_queue.get()

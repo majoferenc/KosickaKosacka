@@ -7,18 +7,18 @@ from map import Map, PositionState
 
 
 # najdenie nabijacky
-def bfs(start_point: Point, map: Map) -> tuple:
+def bfs(target_point: Point, map: Map) -> tuple:
     bfs_queue = queue.Queue()
     directions = {}
 
     passed = []
-    bfs_queue.put(start_point)
-    passed.append(start_point)
+    bfs_queue.put(target_point)
+    passed.append(target_point)
 
     arround = np.array([[1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1]])
 
+    print('Start of BFS hell')
     while not bfs_queue.empty():
-        logging.debug('Start of while loop')
         point = bfs_queue.get(timeout=False)
         logging.debug(point)
         logging.debug(map.get_position_state(point))
@@ -49,6 +49,7 @@ def bfs(start_point: Point, map: Map) -> tuple:
                 directions[neighbour] = Point(point.X - neighbour.X, point.Y - neighbour.Y)
                 logging.debug('Adding to directions 2: ' + str(neighbour) + str(point))
     logging.debug('Directions calculated')
+    print('End of BFS hell')
 
 
 
