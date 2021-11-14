@@ -69,7 +69,7 @@ def dijkstra_to_unexplored_point(destination_point: Point, map: Map):
     # minimal directions to charger
     directions = {}
     done[destination_point] = 0
-    # directions[destination_point] = Point(0, 0)
+
 
     for p in map.get_map():
         not_done[p] = sys.maxsize
@@ -77,14 +77,14 @@ def dijkstra_to_unexplored_point(destination_point: Point, map: Map):
     arround = np.array([[1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1]])
     for a in arround:
         neighbour = Point(destination_point.X + a[0], destination_point.Y + a[1])
+        neighbour_state = map.get_map().get(neighbour, None)
         if neighbour in not_done and \
-                (map.get_map().get(neighbour, None) == PositionState.GRASS or \
-                 map.get_map().get(neighbour, None) == PositionState.CHARGER):
+                (neighbour_state == PositionState.GRASS or \
+                 neighbour_state == PositionState.CHARGER):
             not_done[neighbour] = 1
             directions[neighbour] = Point(-a[0], -a[1])
     while bool(not_done):
-        # for nd in not_done.items():
-        #     logging.debug(nd[0], nd[1])
+
         minimum = sys.maxsize
         minPoint = None
         for p in not_done.keys():
@@ -92,20 +92,15 @@ def dijkstra_to_unexplored_point(destination_point: Point, map: Map):
                 minimum = not_done.get(p)
                 minPoint = p
         done[minPoint] = not_done.get(minPoint)
-        # logging.debug("Min point" + str(minPoint))
-        # logging.debug("---------------------")
-        # for nd in done.items():
-        #     logging.debug(nd[0], nd[1])
-        # logging.debug("===")
+
         not_done.pop(minPoint, None)
         for a in arround:
             neighbour = Point(minPoint.X + a[0], minPoint.Y + a[1])
-
-            if map.get_map().get(neighbour, None) == None:
+            neighbour_state = map.get_map().get(neighbour, None)
+            if neighbour_state == None:
                 return neighbour
             if neighbour in not_done:
-                if map.get_map().get(neighbour, None) != PositionState.GRASS and map.get_map().get(neighbour,
-                                                                                                   None) != PositionState.CHARGER:
+                if neighbour_state != PositionState.GRASS and neighbour_state != PositionState.CHARGER:
                     not_done.pop(neighbour, None)
                     continue
                 turn_distance = abs(directions[minPoint].X + a[0]) + abs(directions[minPoint].Y + a[1])

@@ -50,7 +50,7 @@ class Model:
         while not self.done:
             if not self.map_real.charger_confirmed or (self.map_real.get_position_state(self.approx_charger_point) is not None and self.map_real.get_position_state(self.approx_charger_point) != PositionState.CHARGER):
                 if self.map_real.charger_confirmed:
-                    print("REAL MAP is wrong!!!!")
+                    print("REAL MAP is wrong 2!!!!")
                     self.map_real = self.map_ne
                     self.map_real.charger_confirmed = False
                 self.approx_charger_point = self.map_real.find_charger(self.charger_direction_offset, self.charger_distance)
