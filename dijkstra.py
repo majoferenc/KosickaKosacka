@@ -27,7 +27,7 @@ def dijkstra(destination_point: Point, map: Map):
                 map.get_map().get(neighbour, None) == PositionState.CHARGER):
             not_done[neighbour] = 1
             directions[neighbour] = Point(-a[0], -a[1])
-    print("Start of DIJKSTRA HELL")
+    #print("Start of DIJKSTRA HELL")
     while bool(not_done):
 
         # for nd in not_done.items():
@@ -60,7 +60,7 @@ def dijkstra(destination_point: Point, map: Map):
                 if not_done.get(neighbour) > done.get(minPoint) + turn_distance + 1:
                     not_done[neighbour] = done[minPoint] + turn_distance + 1
                     directions[neighbour] = Point(-a[0], -a[1])
-    print("End of DIJKSTRA HELL")
+    #print("End of DIJKSTRA HELL")
     return directions
 
 

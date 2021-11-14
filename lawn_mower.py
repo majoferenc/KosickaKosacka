@@ -27,8 +27,6 @@ def get_supported_moves(current_position, current_direction, target_position, di
     next_point = current_position
     while next_point != target_position:
         direction = directions.get(next_point)
-        if type(direction) is list:
-            print("Go fuck yourself")
         supported_moves.extend(get_turns(current_direction, direction))
         current_direction = direction
         supported_moves.append(SupportedMove.FORWARD)
@@ -36,7 +34,8 @@ def get_supported_moves(current_position, current_direction, target_position, di
     return supported_moves
 
 
-def moves_to_charger(map):
-    directions = dijkstra.dijkstra(map.get_charger_position(), map)
+def moves_to_charger(map, found_new_tile):
+    if map.actual_charger_directions is None or found_new_tile:
+        map.actual_charger_directions = dijkstra.dijkstra(map.get_charger_position(), map)
     current_dir = map.get_current_direction()
-    return get_supported_moves(map.get_current_position(), Point(current_dir[0], current_dir[1]), map.get_charger_position(), directions)
+    return get_supported_moves(map.get_current_position(), Point(current_dir[0], current_dir[1]), map.get_charger_position(), map.actual_charger_directions)

@@ -48,6 +48,7 @@ class Map:
         self.position = Point(0, 0)
         self.direction = start_direction
         self.charger_confirmed = False
+        self.actual_charger_directions = None
 
     def update_position(self, direction, position_state: PositionState):
         self.position = Point(self.position.X + direction[0], self.position.Y + direction[1])

@@ -5,6 +5,7 @@ from supported_move import SupportedMove
 from map import Map, convert_sensor_response_to_position_state
 import webbrowser, pyautogui
 import lawn_mower as lawn_mower
+from point import Point
 from map import PositionState
 
 
@@ -34,7 +35,9 @@ class Model:
         self.map_ne = Map([1, 1])
         self.map_real.set_pair(0, 0, PositionState.GRASS)
         self.map_ne.set_pair(0, 0, PositionState.GRASS)       
-        
+        self.found_new_tile = True
+
+
     def execute(self):
         if self.render_mode is True:
             webbrowser.open(self.base_url+"visualize/" + self.session_id)
@@ -42,6 +45,7 @@ class Model:
             self.last_move = SupportedMove.FORWARD
             step_response, response_code = api.step(self.session_id, self.last_move, self.base_url)
             self.update_step_data(step_response)
+
         while not self.done:
             if not self.map_real.charger_confirmed:
                 approx_charger_point = self.map_real.find_charger(self.charger_direction_offset, self.charger_distance)
@@ -52,7 +56,7 @@ class Model:
                 self.executing_moves_to_charger = False
                 self.put_mirrored_last_move_into_queue()
             elif self.map_real.get_charger_position() is not None and self.executing_moves_to_charger is False:
-                moves_to_charger = lawn_mower.moves_to_charger(self.map_real)
+                moves_to_charger = lawn_mower.moves_to_charger(self.map_real, self.found_new_tile)
                 
                 if len(moves_to_charger) + 6 >= self.power_current:
                     self.executing_moves_to_charger = True
@@ -69,6 +73,7 @@ class Model:
             # run step by api
             step_response, response_code = api.step(self.session_id, self.last_move, self.base_url)
             # print('LAST Move: ' + str(self.last_move))
+            self.found_new_tile = self.is_found_new_tile()
             self.update_step_data(step_response)
         
         if self.render_mode is True:
@@ -76,7 +81,14 @@ class Model:
             # Closing browser tab
             # pyautogui.hotkey('ctrl', 'w')
             
-            
+    def is_found_new_tile(self):
+        current_position = self.map_real.get_current_position()
+        current_direction = self.map_real.get_current_direction()
+        if self.last_move != SupportedMove.FORWARD:
+            return False
+        point = Point(current_position.X + current_direction[0], current_position.Y + current_direction[1])
+        return self.map_real.get_position_state(point) is None
+
     def update_step_data(self, step_json):
         self.done = step_json["done"]
         self.reward = step_json["reward"]

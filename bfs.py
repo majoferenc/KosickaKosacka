@@ -17,7 +17,7 @@ def bfs(target_point: Point, map: Map) -> tuple:
 
     arround = np.array([[1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1]])
 
-    print('Start of BFS hell')
+    # print('Start of BFS hell')
     while not bfs_queue.empty():
         point = bfs_queue.get(timeout=False)
         logging.debug(point)
@@ -34,8 +34,8 @@ def bfs(target_point: Point, map: Map) -> tuple:
 
                 logging.debug('Adding to directions 1: ' + str(neighbour) + str(
                     Point(point.X - neighbour.X, point.Y - neighbour.Y)))
-                print(str(neighbour))
-                print('End of BFS hell')
+                # print(str(neighbour))
+                # print('End of BFS hell')
                 return directions, neighbour
             logging.debug('neighbour:' + str(neighbour))
             logging.debug('passed:' + str(passed))
