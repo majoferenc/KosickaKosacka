@@ -22,7 +22,7 @@ def bfs(target_point: Point, map: Map) -> tuple:
         bfs_queue.put(target_point)
         while not bfs_queue.empty():
             point = bfs_queue.get(block=False)
-            for i in range(7):
+            for i in range(len(around)):
                 neighbour = Point(point.X + around[i][0], point.Y + around[i][1])
                 if j == 0:
                     x_n = neighbour.X - target_point.X
