@@ -27,6 +27,7 @@ class Model:
 
         # model variables
         self.last_move = None
+        self.executing_moves_to_charger = False
         # FIFO Queue
         self.execute_queue = queue.Queue()
         self.map_n = Map([0, 1])
@@ -48,19 +49,18 @@ class Model:
             # anti dead mode
             if self.sensor == SensorResponse.OBSTACLE or self.sensor == SensorResponse.BORDER:    
                 # execute SupportedMove.FORWARD or SupportedMove.BACKWARD
+                self.executing_moves_to_charger = False
                 self.put_mirrored_last_move_into_queue()
-            else:
-                # TODO check if lawner has enough energy with dijkstra algo
-                need_go_to_charger = False
-                moves_to_charger = False
+            elif self.map_real.get_charger_position() is not None and self.executing_moves_to_charger is False:
+                moves_to_charger = lawn_mower.moves_to_charger(map)
                 
-                if need_go_to_charger:
-                    pass
-                    # TODO go to charger, steps from dijkstra
-                    # self.execute_queue = # get new queue data
+                if len(moves_to_charger) + 6 >= self.power_current:
+                    self.executing_moves_to_charger = True
+                    self.put_data_array_in_queue(moves_to_charger)
 
             # check if execute queue is empty
             if self.execute_queue.qsize() == 0:
+                self.executing_moves_to_charger = False
                 # get moves from algorithm, only if no known moves
                 self.put_data_array_in_queue(lawn_mower.moves_to_exectute(self.map_real, approx_charger_point))
 
