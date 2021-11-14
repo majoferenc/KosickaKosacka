@@ -7,7 +7,7 @@ from map import Map
 
 def dfs(map):
     pos = map.get_current_position()
-    for i in [(0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1), (-1, 0), (-1, 1)]:
+    for i in [(0, 1), (1, 1), (-1, 1), (1, 0), (-1, 0), (1, -1), (-1, -1), (0, -1)]:
         step = Point(pos.X + i[0], pos.Y + i[1])
         # Pozicia este nebola preskumana
         if map.get_position_state(step) is None:
