@@ -18,32 +18,11 @@ Open Anaconda Powershell Prompt:
 
     pip install -r requirements.txt --user
 
-## Run algo version
+## Run main version
     
     python main.py --maps Greenland Localhost 'Mapname with spaces' --base_url http://169.51.194.78:31798/
 
-## Run algo version with Rendering Mode
+## Run main version with Rendering Mode
     
     python main.py --render_mode --maps Greenland Localhost 'Mapname with spaces' --base_url http://169.51.194.78:31798/
 
-## NN version (Don't run during Hack@Home finals, WIP)
-### Training Mode
-
-    python main_dqn.py
-    
-### Training Mode with Rendering Mode
-
-    python main_dqn.py --render_mode True --maps Greenland Localhost 'Mapname with spaces' --base_url http://169.51.194.78:31798/
-
-### Predict Mode
-
-    python main_dqn.py --predict_mode True --maps Greenland Localhost 'Mapname with spaces' --base_url http://169.51.194.78:31798/
-
-### Predict Mode with Rendering Mode
-
-    python main_dqn.py --predict_mode True --render_mode True --maps Greenland Localhost 'Mapname with spaces' --base_url http://169.51.194.78:31798/
-
-
-### Helper on Windows
-    conda activate C:\Users\<your-username>\anaconda3\envs\tf_test_env2
-    cd ../../IBM/Hack@Home2021/KosickaKosacka
