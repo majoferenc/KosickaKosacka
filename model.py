@@ -37,7 +37,7 @@ class Model:
         self.map_real.set_pair(0, 0, PositionState.GRASS)
         self.map_ne.set_pair(0, 0, PositionState.GRASS)       
         self.found_new_tile = True
-
+        self.approx_charger_point = None
 
     def execute(self):
         if self.render_mode is True:
@@ -48,10 +48,14 @@ class Model:
             self.update_step_data(step_response)
 
         while not self.done:
-            if not self.map_real.charger_confirmed:
-                approx_charger_point = self.map_real.find_charger(self.charger_direction_offset, self.charger_distance)
-                while self.map_real.get_position_state(approx_charger_point) is not None:
-                    approx_charger_point = dijkstra.dijkstra_to_unexplored_point(approx_charger_point, self.map_real)
+            if not self.map_real.charger_confirmed or (self.map_real.get_position_state(self.approx_charger_point) is not None and self.map_real.get_position_state(self.approx_charger_point) != PositionState.CHARGER):
+                if self.map_real.charger_confirmed:
+                    print("REAL MAP is wrong!!!!")
+                    self.map_real = self.map_ne
+                    self.map_real.charger_confirmed = False
+                self.approx_charger_point = self.map_real.find_charger(self.charger_direction_offset, self.charger_distance)
+                while self.map_real.get_position_state(self.approx_charger_point) is not None:
+                    self.approx_charger_point = dijkstra.dijkstra_to_unexplored_point(self.approx_charger_point, self.map_real)
             # check if not standing on obstacle or border
             # anti dead mode
             if self.sensor == SensorResponse.OBSTACLE or self.sensor == SensorResponse.BORDER:    
@@ -71,7 +75,7 @@ class Model:
             if self.execute_queue.qsize() == 0:
                 self.executing_moves_to_charger = False
                 # get moves from algorithm, only if no known moves
-                self.put_data_array_in_queue(lawn_mower.moves_to_exectute(self.map_real, approx_charger_point))
+                self.put_data_array_in_queue(lawn_mower.moves_to_exectute(self.map_real, self.approx_charger_point))
 
             # get last_move for anti dead move
             self.last_move = self.execute_queue.get()
