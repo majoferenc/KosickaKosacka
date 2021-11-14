@@ -169,7 +169,7 @@ class Map:
             return Point(x + distance, y)
 
 
-        delta = int(distance / math.sqrt(2))
+        delta = math.ceil(distance / math.sqrt(2))
         if direction_offset == 45:
             return Point(x - delta, y + delta)
 
