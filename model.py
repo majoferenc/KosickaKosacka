@@ -30,9 +30,9 @@ class Model:
         self.executing_moves_to_charger = False
         # FIFO Queue
         self.execute_queue = queue.Queue()
-        self.map_n = Map([0, 1])
+        self.map_real = Map([0, 1])
         self.map_ne = Map([1, 1])
-        self.map_n.set_pair(0, 0, PositionState.GRASS)
+        self.map_real.set_pair(0, 0, PositionState.GRASS)
         self.map_ne.set_pair(0, 0, PositionState.GRASS)       
         
     def execute(self):
@@ -43,16 +43,16 @@ class Model:
             step_response, response_code = api.step(self.session_id, self.last_move, self.base_url)
             self.update_step_data(step_response)
         while not self.done:
-            if not self.map_n.charger_confirmed:
-                approx_charger_point = self.map_n.find_charger(self.charger_direction_offset, self.charger_distance)
+            if not self.map_real.charger_confirmed:
+                approx_charger_point = self.map_real.find_charger(self.charger_direction_offset, self.charger_distance)
             # check if not standing on obstacle or border
             # anti dead mode
             if self.sensor == SensorResponse.OBSTACLE or self.sensor == SensorResponse.BORDER:    
                 # execute SupportedMove.FORWARD or SupportedMove.BACKWARD
                 self.executing_moves_to_charger = False
                 self.put_mirrored_last_move_into_queue()
-            elif self.map_n.get_charger_position() is not None and self.executing_moves_to_charger is False:
-                moves_to_charger = lawn_mower.moves_to_charger(self.map_n)
+            elif self.map_real.get_charger_position() is not None and self.executing_moves_to_charger is False:
+                moves_to_charger = lawn_mower.moves_to_charger(self.map_real)
                 
                 if len(moves_to_charger) + 6 >= self.power_current:
                     self.executing_moves_to_charger = True
@@ -62,12 +62,13 @@ class Model:
             if self.execute_queue.qsize() == 0:
                 self.executing_moves_to_charger = False
                 # get moves from algorithm, only if no known moves
-                self.put_data_array_in_queue(lawn_mower.moves_to_exectute(self.map_n, approx_charger_point))
+                self.put_data_array_in_queue(lawn_mower.moves_to_exectute(self.map_real, approx_charger_point))
 
             # get last_move for anti dead move
             self.last_move = self.execute_queue.get()
             # run step by api
             step_response, response_code = api.step(self.session_id, self.last_move, self.base_url)
+            # print('LAST Move: ' + str(self.last_move))
             self.update_step_data(step_response)
         
         if self.render_mode is True:
@@ -91,11 +92,16 @@ class Model:
         
         # update map
         position_state = convert_sensor_response_to_position_state(self.sensor)
-        if self.map_n is self.map_ne:
-            self.map_n.update_position_from_move(self.last_move, position_state)
-        else: 
-            self.map_n.update_position_from_move(self.last_move, position_state)
-            self.map_ne.update_position_from_move(self.last_move, position_stat)
+        if self.map_real is self.map_ne:
+            self.map_real.update_position_from_move(self.last_move, position_state)
+        else:
+            if not self.map_ne.update_position_from_move(self.last_move, position_state):
+                print("NORTHEAST MAP is wrong!!!!")
+                self.map_ne = self.map_real
+
+            if not self.map_real.update_position_from_move(self.last_move, position_state):
+                print("REAL MAP is wrong!!!!")
+                self.map_real = self.map_ne
 
     def put_data_array_in_queue(self, array):
         self.execute_queue = queue.Queue()

@@ -55,29 +55,32 @@ class Map:
         self.set_direction(direction)
 
         # there already is something on this position and we're trying to overwrite - NOT ALLOWED
-        if self.get_current_position_state() != position_state:
+        if self.map.get(self.position) is not None and self.get_current_position_state() != position_state:
             return False
 
         self.map[self.position] = position_state
 
         if (position_state is PositionState.CHARGER):
             self.set_charger_position(Point(self.position.X, self.position.Y))
+        return True
 
     def update_position_from_sensor(self, direction, sensor_response: SensorResponse):
         return self.update_position(self, direction, convert_sensor_response_to_position_state(sensor_response))
 
     def update_position_from_move(self, move: SupportedMove, position_state: PositionState):
         # the mower did not move, it just rotated
+        response = True
         if move == SupportedMove.TURN_LEFT or move == SupportedMove.TURN_RIGHT:
             self.set_direction(convert_move_to_direction(self.direction, move))
         elif move == SupportedMove.FORWARD:
-            self.update_position(self.direction, position_state)
+            response = self.update_position(self.direction, position_state)
         elif move == SupportedMove.BACKWARD:
             # move into the opposite direction
             original_direction = self.direction
-            self.update_position([-original_direction[0], -original_direction[1]], position_state)
+            response = self.update_position([-original_direction[0], -original_direction[1]], position_state)
             # revert the changes on the mower's direction
             self.set_direction(original_direction)
+        return response
 
     def update_position_from_move_and_sensor(self, move: SupportedMove, sensor_response: SensorResponse):
         return self.update_position_from_move(move, convert_sensor_response_to_position_state(sensor_response))
