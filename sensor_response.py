@@ -7,4 +7,4 @@ class SensorResponse(str, Enum):
     CUT = "Cut"
     OUT_OF_BOUNDARIES = "OutOfBoundaries"
     STUCK = "Stuck"
-    CHARGE = "Charge"
+    CHARGE = "Charged"

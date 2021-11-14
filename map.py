@@ -149,9 +149,6 @@ class Map:
 
         # ZMENA KONCI TU, ZVYSOK JE ROVNAKY
 
-        if self.charger_confirmed:
-            return self.charger
-
         x = self.position.X
         y = self.position.Y
 
@@ -191,8 +188,8 @@ class Map:
             my_direction -= 90
             was_big = True
 
-        cos = math.cos(my_direction) * distance
-        sin = math.sin(my_direction) * distance
+        cos = math.cos(math.radians(my_direction)) * distance
+        sin = math.sin(math.radians(my_direction)) * distance
 
         if was_big:
             delta_x = cos

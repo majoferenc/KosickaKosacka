@@ -9,6 +9,8 @@ class SupportedMove(str, Enum):
     TURN_RIGHT = "TurnRight"
     
 def get_turns(start, end):
+    if start == end:
+        return []
     supported_moves = []
     start_number = get_direction_number(start)
     end_number = get_direction_number(end)

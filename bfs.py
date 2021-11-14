@@ -35,6 +35,7 @@ def bfs(target_point: Point, map: Map) -> tuple:
                 logging.debug('Adding to directions 1: ' + str(neighbour) + str(
                     Point(point.X - neighbour.X, point.Y - neighbour.Y)))
                 print(str(neighbour))
+                print('End of BFS hell')
                 return directions, neighbour
             logging.debug('neighbour:' + str(neighbour))
             logging.debug('passed:' + str(passed))
@@ -49,7 +50,7 @@ def bfs(target_point: Point, map: Map) -> tuple:
                 directions[neighbour] = Point(point.X - neighbour.X, point.Y - neighbour.Y)
                 logging.debug('Adding to directions 2: ' + str(neighbour) + str(point))
     logging.debug('Directions calculated')
-    print('End of BFS hell')
+
 
 
 

@@ -41,8 +41,9 @@ class Model:
             self.last_move = SupportedMove.FORWARD
             step_response, response_code = api.step(self.session_id, self.last_move, self.base_url)
             self.update_step_data(step_response)
-        approx_charger_point = self.map_real.find_charger(self.charger_direction_offset, self.charger_distance)
         while not self.done:
+            if not self.map_real.charger_confirmed:
+                approx_charger_point = self.map_real.find_charger(self.charger_direction_offset, self.charger_distance)
             # check if not standing on obstacle or border
             # anti dead mode
             if self.sensor == SensorResponse.OBSTACLE or self.sensor == SensorResponse.BORDER:    

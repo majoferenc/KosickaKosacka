@@ -16,7 +16,11 @@ def moves_to_exectute(map, approx_charger_point):
     else:
         #use dfs
         directions, point = dfs.dfs(map)
-        return get_supported_moves(map.get_current_position(), map.get_current_direction(), point, directions)
+        if directions is None:
+            point = dijkstra.dijkstra_to_unexplored_point(map.get_current_position(), map)
+            directions = dijkstra.dijkstra(point, map)
+        current_dir = map.get_current_direction()
+        return get_supported_moves(map.get_current_position(),Point(current_dir[0], current_dir[1]), point, directions)
 
 def get_supported_moves(current_position, current_direction, target_position, directions):
     supported_moves = []
@@ -26,6 +30,7 @@ def get_supported_moves(current_position, current_direction, target_position, di
         if type(direction) is list:
             print("Go fuck yourself")
         supported_moves.extend(get_turns(current_direction, direction))
+        current_direction = direction
         supported_moves.append(SupportedMove.FORWARD)
         next_point = Point(next_point.X + direction.X, next_point.Y + direction.Y)
     return supported_moves
