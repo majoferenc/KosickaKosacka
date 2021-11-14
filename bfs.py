@@ -8,9 +8,6 @@ from map import Map, PositionState
 # najdenie nabijacky
 def bfs(target_point: Point, map: Map) -> tuple:
     directions = {}
-    passed = []
-    passed.append(target_point)
-
     around = np.array([[1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1]])
 
     x = map.get_current_position().X - target_point.X
@@ -19,6 +16,8 @@ def bfs(target_point: Point, map: Map) -> tuple:
     y = int(math.copysign(1, y))
 
     for j in range(2):
+        passed = []
+        passed.append(target_point)
         bfs_queue = queue.SimpleQueue()
         bfs_queue.put(target_point)
         while not bfs_queue.empty():
