@@ -35,10 +35,6 @@ def get_supported_moves(current_position, current_direction, target_position, di
         next_point = Point(next_point.X + direction.X, next_point.Y + direction.Y)
     return supported_moves
 
-    # for direction in directions:
-    #     supported_moves.extend(get_turns(current_direction_temp, direction))
-    #     supported_moves.append(SupportedMove.FORWARD)
-    #     current_direction_temp = direction
 
 def moves_to_charger(map):
     directions = dijkstra.dijkstra(map.get_charger_position(), map)

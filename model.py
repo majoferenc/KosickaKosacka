@@ -52,7 +52,7 @@ class Model:
                 self.executing_moves_to_charger = False
                 self.put_mirrored_last_move_into_queue()
             elif self.map_real.get_charger_position() is not None and self.executing_moves_to_charger is False:
-                moves_to_charger = lawn_mower.moves_to_charger(map)
+                moves_to_charger = lawn_mower.moves_to_charger(self.map_real)
                 
                 if len(moves_to_charger) + 6 >= self.power_current:
                     self.executing_moves_to_charger = True
