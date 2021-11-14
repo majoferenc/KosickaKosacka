@@ -1,7 +1,6 @@
 import sys
 import logging
 import numpy as np
-import matplotlib.pyplot as plt
 from point import Point
 from sensor_response import SensorResponse
 from map import Map, PositionState
@@ -118,27 +117,4 @@ def dijkstra_to_unexplored_point(destination_point: Point, map: Map):
                     directions[neighbour] = Point(-a[0], -a[1])
 
 
-# Testing BFS
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
-    destination_point: Point = Point(0, 1)
-    map_mock: Map = Map()
-    map_mock.set_pair(0, 0, PositionState.GRASS)
-    map_mock.set_pair(0, 1, PositionState.GRASS)
-    map_mock.set_pair(0, 2, PositionState.GRASS)
-    map_mock.set_pair(1, 0, PositionState.OBSTACLE)
-    map_mock.set_pair(1, 1, PositionState.OBSTACLE)
-    map_mock.set_pair(1, 2, PositionState.GRASS)
-    map_mock.set_pair(2, 0, PositionState.GRASS)
-    map_mock.set_pair(2, 1, PositionState.GRASS)
-    map_mock.set_pair(2, 2, PositionState.CHARGER)
-    directions = dijkstra(destination_point, map_mock)
-    xpoints = []
-    ypoints = []
-    for direction in directions.items():
-        logging.debug(direction[0], direction[1])
-        xpoints.append(direction[0].X)
-        ypoints.append(direction[0].Y)
 
-    plt.plot(xpoints, ypoints, 'o')
-    plt.show()

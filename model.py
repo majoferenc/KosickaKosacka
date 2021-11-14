@@ -1,5 +1,6 @@
 import queue
 import api_util as api
+import dijkstra as dijkstra
 from sensor_response import SensorResponse
 from supported_move import SupportedMove
 from map import Map, convert_sensor_response_to_position_state
@@ -49,6 +50,8 @@ class Model:
         while not self.done:
             if not self.map_real.charger_confirmed:
                 approx_charger_point = self.map_real.find_charger(self.charger_direction_offset, self.charger_distance)
+                while self.map_real.get_position_state(approx_charger_point) is not None:
+                    approx_charger_point = dijkstra.dijkstra_to_unexplored_point(approx_charger_point, self.map_real)
             # check if not standing on obstacle or border
             # anti dead mode
             if self.sensor == SensorResponse.OBSTACLE or self.sensor == SensorResponse.BORDER:    
@@ -126,6 +129,6 @@ class Model:
         if self.last_move == SupportedMove.FORWARD:
             self.execute_queue.put(SupportedMove.BACKWARD)
         elif self.last_move == SupportedMove.BACKWARD:
-            self.execute_queue.put(SupportedMove.BACKWFORWARDARD)
+            self.execute_queue.put(SupportedMove.FORWARD)
         else:
             raise Exception("Move {} don't have mirrored move.".format(self.last_move))
