@@ -101,7 +101,7 @@ def dijkstra_to_unexplored_point(destination_point: Point, map: Map):
         for a in arround:
             neighbour = Point(minPoint.X + a[0], minPoint.Y + a[1])
 
-            if map.get_map().get(neighbour, None) == None
+            if map.get_map().get(neighbour, None) == None:
                 return directions, neighbour
             if neighbour in not_done:
                 if map.get_map().get(neighbour, None) != PositionState.GRASS and map.get_map().get(neighbour,
