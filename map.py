@@ -55,7 +55,7 @@ class Map:
         self.set_direction(direction)
 
         # there already is something on this position and we're trying to overwrite - NOT ALLOWED
-        if self.get_current_position_state != position_state:
+        if self.get_current_position_state() != position_state:
             return False
 
         self.map[self.position] = position_state
