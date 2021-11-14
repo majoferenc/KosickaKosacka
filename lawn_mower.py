@@ -40,3 +40,7 @@ def get_supported_moves(current_position, current_direction, target_position, di
     #     supported_moves.append(SupportedMove.FORWARD)
     #     current_direction_temp = direction
 
+def moves_to_charger(map):
+    directions = dijkstra.dijkstra(map.get_charger_position(), map)
+    current_dir = map.get_current_direction()
+    return get_supported_moves(map.get_current_position(), Point(current_dir[0], current_dir[1]), map.get_charger_position(), directions)

@@ -27,6 +27,7 @@ class Model:
 
         # model variables
         self.last_move = None
+        self.executing_moves_to_charger = False
         # FIFO Queue
         self.execute_queue = queue.Queue()
         self.map_n = Map([0, 1])
@@ -34,10 +35,9 @@ class Model:
         self.map_real = self.map_n
 
         self.map_real.set_pair(0, 0, PositionState.GRASS)
-
     def execute(self):
         if self.render_mode is True:
-            webbrowser.open(self.base_url + "visualize/" + self.session_id)
+            webbrowser.open(self.base_url+"visualize/" + self.session_id)
         if self.charger_distance is None:
             self.last_move = SupportedMove.FORWARD
             step_response, response_code = api.step(self.session_id, self.last_move, self.base_url)
@@ -47,21 +47,20 @@ class Model:
                 approx_charger_point = self.map_real.find_charger(self.charger_direction_offset, self.charger_distance)
             # check if not standing on obstacle or border
             # anti dead mode
-            if self.sensor == SensorResponse.OBSTACLE or self.sensor == SensorResponse.BORDER:
+            if self.sensor == SensorResponse.OBSTACLE or self.sensor == SensorResponse.BORDER:    
                 # execute SupportedMove.FORWARD or SupportedMove.BACKWARD
+                self.executing_moves_to_charger = False
                 self.put_mirrored_last_move_into_queue()
-            else:
-                # TODO check if lawner has enough energy with dijkstra algo
-                need_go_to_charger = False
-                moves_to_charger = False
-
-                if need_go_to_charger:
-                    pass
-                    # TODO go to charger, steps from dijkstra
-                    # self.execute_queue = # get new queue data
+            elif self.map_real.get_charger_position() is not None and self.executing_moves_to_charger is False:
+                moves_to_charger = lawn_mower.moves_to_charger(map)
+                
+                if len(moves_to_charger) + 6 >= self.power_current:
+                    self.executing_moves_to_charger = True
+                    self.put_data_array_in_queue(moves_to_charger)
 
             # check if execute queue is empty
             if self.execute_queue.qsize() == 0:
+                self.executing_moves_to_charger = False
                 # get moves from algorithm, only if no known moves
                 self.put_data_array_in_queue(lawn_mower.moves_to_exectute(self.map_real, approx_charger_point))
 
@@ -70,34 +69,37 @@ class Model:
             # run step by api
             step_response, response_code = api.step(self.session_id, self.last_move, self.base_url)
             self.update_step_data(step_response)
-
+        
         if self.render_mode is True:
             pass
             # Closing browser tab
             # pyautogui.hotkey('ctrl', 'w')
-
+            
+            
     def update_step_data(self, step_json):
         self.done = step_json["done"]
         self.reward = step_json["reward"]
         self.sensor = step_json["sensors"]
         self.charger_distance = step_json["chargerLocation"]["distance"]
         self.charger_direction_offset = step_json["chargerLocation"]["directionOffset"]
-
+        
         # update power
         if self.sensor == SensorResponse.CHARGE:
             self.power_current = self.power_max
         else:
             self.power_current -= 1
-
+        
         # update map
         position_state = convert_sensor_response_to_position_state(self.sensor)
         self.map_n.update_position_from_move(self.last_move, position_state)
         self.map_ne.update_position_from_move(self.last_move, position_state)
 
+
     def put_data_array_in_queue(self, array):
         self.execute_queue = queue.Queue()
         for data in array:
             self.execute_queue.put(data)
+
 
     def put_mirrored_last_move_into_queue(self):
         self.execute_queue = queue.Queue()
