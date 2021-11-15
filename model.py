@@ -52,6 +52,7 @@ class Model:
                 if self.map_real.charger_confirmed:
                     print("REAL MAP is wrong 2!!!!")
                     self.map_real = self.map_ne
+                    self.execute_queue = queue.Queue()
                     self.map_real.charger_confirmed = False
                 self.approx_charger_point = self.map_real.find_charger(self.charger_direction_offset, self.charger_distance)
                 while self.map_real.get_position_state(self.approx_charger_point) is not None:
@@ -119,11 +120,12 @@ class Model:
             if not self.map_ne.update_position_from_move(self.last_move, position_state):
                 print("NORTHEAST MAP is wrong!!!!")
                 self.map_ne = self.map_real
+                self.execute_queue = queue.Queue()
 
             if not self.map_real.update_position_from_move(self.last_move, position_state):
                 print("REAL MAP is wrong!!!!")
                 self.map_real = self.map_ne
-
+                self.execute_queue = queue.Queue()
     def put_data_array_in_queue(self, array):
         self.execute_queue = queue.Queue()
         for data in array:
