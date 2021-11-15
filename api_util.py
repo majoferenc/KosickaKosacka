@@ -1,7 +1,7 @@
 import time
 import requests
 
-TEAM_NAME = "KošickeKosačky@IBM"
+TEAM_NAME = "KosickeKosackyAtIBM"
 
 def step(session_id, move, base_url):
     if hasattr(move, 'value'):
