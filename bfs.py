@@ -24,13 +24,15 @@ def bfs(target_point: Point, map: Map) -> tuple:
             point = bfs_queue.get(block=False)
             for i in range(len(around)):
                 neighbour = Point(point.X + around[i][0], point.Y + around[i][1])
+                x_n = neighbour.X - target_point.X
+                y_n = neighbour.Y - target_point.Y
+                x_n = int(math.copysign(1, x_n))
+                y_n = int(math.copysign(1, y_n))
                 if j == 0:
-                    x_n = neighbour.X - target_point.X
-                    y_n = neighbour.Y - target_point.Y
-                    x_n = int(math.copysign(1, x_n))
-                    y_n = int(math.copysign(1, y_n))
                     if (x_n == -x) or (y_n == -y):
                         continue
+                elif x_n == x and y_n == y:
+                    continue
                 neighbour_state = map.get_position_state(neighbour)
                 if neighbour_state == PositionState.GRASS:
                     directions[neighbour] = Point(point.X - neighbour.X, point.Y - neighbour.Y)

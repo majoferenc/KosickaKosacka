@@ -14,15 +14,16 @@ Open Anaconda Powershell Prompt:
     conda activate tf_test_env1
 
 ## Install App Dependencies for requirements file ) (FIRST SETUP OF EXISTING PROJECT
-Open Anaconda Powershell Prompt:
+Open Anaconda Powershell Prompt and go to project folder:
 
     pip install -r requirements.txt --user
 
 ## Run main version
+Open Anaconda Powershell Prompt and go to project folder:
     
     python main.py --maps Greenland Localhost 'Mapname with spaces' --base_url http://169.51.194.78:31798/
 
 ## Run main version with Rendering Mode
+Open Anaconda Powershell Prompt and go to project folder:
     
     python main.py --render_mode --maps Greenland Localhost 'Mapname with spaces' --base_url http://169.51.194.78:31798/
-
