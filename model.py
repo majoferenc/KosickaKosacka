@@ -64,7 +64,7 @@ class Model:
                 self.put_mirrored_last_move_into_queue()
             elif self.map_real.get_charger_position() is not None and self.executing_moves_to_charger is False:
                 moves_to_charger = lawn_mower.moves_to_charger(self.map_real, self.found_new_tile)
-                path_multiplier = 2
+                path_multiplier = 3
                 if self.map_real is self.map_ne:
                     path_multiplier = 1
                 if (len(moves_to_charger) + 6) * path_multiplier >= self.power_current:
